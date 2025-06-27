@@ -1,0 +1,2 @@
+// API controller
+module.exports = {};
