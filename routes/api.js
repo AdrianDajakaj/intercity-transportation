@@ -7,6 +7,10 @@ const busController = require('../controllers/busController');
 const busStopController = require('../controllers/busStopController');
 const lineController = require('../controllers/lineController');
 const lineStopController = require('../controllers/lineStopController');
+const timetableController = require('../controllers/timetableController');
+const tripController = require('../controllers/tripController');
+const discountController = require('../controllers/discountController');
+const fareController = require('../controllers/fareController');
 
 // Address CRUD routes
 router.post('/addresses', addressController.create);
@@ -61,5 +65,43 @@ router.delete('/line-stops/:id', lineStopController.delete);
 router.get('/line-stops/:id/line', lineStopController.getLine);
 // Get bus stop for a specific line stop
 router.get('/line-stops/:id/bus-stop', lineStopController.getBusStop);
+// Get line and bus stop for a specific line stop
+router.get('/line-stops/:id/line-bus-stop', lineStopController.getLineAndBusStop);
+
+// Timetable CRUD routes
+router.post('/timetables', timetableController.create);
+router.get('/timetables', timetableController.getAll);
+router.get('/timetables/:id', timetableController.getById);
+router.put('/timetables/:id', timetableController.update);
+router.delete('/timetables/:id', timetableController.delete);
+// Get line and bus stop for a specific timetable entry
+router.get('/timetables/:id/line-bus-stop', timetableController.getLineAndBusStop);
+
+// Trip CRUD routes
+router.post('/trips', tripController.create);
+router.get('/trips', tripController.getAll);
+router.get('/trips/:id', tripController.getById);
+router.put('/trips/:id', tripController.update);
+router.delete('/trips/:id', tripController.delete);
+// Get line for a specific trip
+router.get('/trips/:id/line', tripController.getLine);
+// Get bus for a specific trip
+router.get('/trips/:id/bus', tripController.getBus);
+// Get all stops and departure times for a specific trip
+router.get('/trips/stops', tripController.getTripStops);
+
+// Discount CRUD routes
+router.post('/discounts', discountController.create);
+router.get('/discounts', discountController.getAll);
+router.get('/discounts/:id', discountController.getById);
+router.put('/discounts/:id', discountController.update);
+router.delete('/discounts/:id', discountController.delete);
+
+// Fare CRUD routes
+router.post('/fares', fareController.create);
+router.get('/fares', fareController.getAll);
+router.get('/fares/:id', fareController.getById);
+router.put('/fares/:id', fareController.update);
+router.delete('/fares/:id', fareController.delete);
 
 module.exports = router;

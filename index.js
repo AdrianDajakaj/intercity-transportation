@@ -9,6 +9,10 @@ const busModel = require('./models/busModel');
 const busStopModel = require('./models/busStopModel');
 const lineModel = require('./models/lineModel'); // ✅ dodaj to
 const lineStopModel = require('./models/lineStopModel'); // Ensure lineStopModel is required
+const timetableModel = require('./models/timetableModel');
+const tripModel = require('./models/tripModel'); // Ensure tripModel is required
+const discountModel = require('./models/discountModel'); // Ensure discountModel is required
+const fareModel = require('./models/fareModel'); // Ensure fareModel is required
 const expressLayouts = require('express-ejs-layouts');
 
 const app = express();
@@ -35,7 +39,7 @@ app.get(BASE_PATH, (req, res) => {
   res.render('index', { basePath: BASE_PATH });
 });
 
-// Ensure address, passenger, bus, bus_stop, line, and line_stop tables exist on startup
+// Ensure address, passenger, bus, bus_stop, line, line_stop, timetable, trip, discount, and fare tables exist on startup
 (async () => {
   try {
     await addressModel.createTable(db);
@@ -43,7 +47,11 @@ app.get(BASE_PATH, (req, res) => {
     await busModel.createTable(db);
     await busStopModel.createTable(db);
     await lineModel.createTable(db);
-    await lineStopModel.createTable(db); // Ensure line_stop table is created
+    await lineStopModel.createTable(db);
+    await timetableModel.createTable(db);
+    await tripModel.createTable(db);
+    await discountModel.createTable(db);
+    await fareModel.createTable(db);
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}, base path: ${BASE_PATH}`);
     });

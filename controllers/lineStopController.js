@@ -82,5 +82,19 @@ module.exports = {
     } catch (err) {
       res.status(500).json({ error: 'Failed to fetch bus stop for line stop' });
     }
+  },
+
+  // Get line and bus stop for a specific line stop
+  getLineAndBusStop: async (req, res) => {
+    try {
+      const lineStop = await lineStopModel.getById(db, req.params.id);
+      if (!lineStop) return res.status(404).json({ error: 'Line stop not found' });
+      const line = lineStop.line_id ? await lineModel.getById(db, lineStop.line_id) : null;
+      const busStop = lineStop.stop_id ? await busStopModel.getById(db, lineStop.stop_id) : null;
+      if (!line || !busStop) return res.status(404).json({ error: 'Line or bus stop not found' });
+      res.json({ line, busStop });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to fetch line and bus stop for line stop' });
+    }
   }
 };
