@@ -19,7 +19,12 @@ module.exports = {
   getAll: async (req, res) => {
     try {
       const trips = await tripModel.getAll(db);
-      res.json(trips);
+      // Format trip_date as YYYY-MM-DD
+      const formatted = trips.map(trip => ({
+        ...trip,
+        trip_date: trip.trip_date instanceof Date ? trip.trip_date.toISOString().slice(0, 10) : trip.trip_date
+      }));
+      res.json(formatted);
     } catch (err) {
       res.status(500).json({ error: 'Failed to fetch trips' });
     }
@@ -30,6 +35,8 @@ module.exports = {
     try {
       const trip = await tripModel.getById(db, req.params.id);
       if (!trip) return res.status(404).json({ error: 'Not found' });
+      // Format trip_date as YYYY-MM-DD
+      trip.trip_date = trip.trip_date instanceof Date ? trip.trip_date.toISOString().slice(0, 10) : trip.trip_date;
       res.json(trip);
     } catch (err) {
       res.status(500).json({ error: 'Failed to fetch trip' });
@@ -84,28 +91,25 @@ module.exports = {
     }
   },
 
-  // Get all stops and departure times for a specific trip (by line_id, trip_date, run_number)
+  // Get all stops and departure times for a specific trip (by trip_id)
   getTripStops: async (req, res) => {
     try {
-      const { line_id, trip_date, run_number } = req.query;
-      if (!line_id || !trip_date || !run_number) {
-        return res.status(400).json({ error: 'Missing required query parameters: line_id, trip_date, run_number' });
+      const trip = await tripModel.getById(db, req.params.id);
+      if (!trip) {
+        return res.status(404).json({ error: 'Trip not found' });
       }
       const sql = `SELECT 
         ls.sequence,
         bs.stop_name,
         tt.departure_time
-      FROM trip t
-      JOIN line_stop ls ON ls.line_id = t.line_id
+      FROM line_stop ls
       JOIN bus_stop bs ON bs.stop_id = ls.stop_id
       JOIN timetable tt ON tt.line_stop_id = ls.line_stop_id
       WHERE 
-        t.line_id = ?
-        AND t.trip_date = ?
-        AND t.run_number = ?
-        AND tt.run_number = t.run_number
+        ls.line_id = ?
+        AND tt.run_number = ?
       ORDER BY ls.sequence`;
-      const [rows] = await db.execute(sql, [line_id, trip_date, run_number]);
+      const [rows] = await db.execute(sql, [trip.line_id, trip.run_number]);
       res.json(rows);
     } catch (err) {
       res.status(500).json({ error: 'Failed to fetch trip stops' });

@@ -11,6 +11,7 @@ const timetableController = require('../controllers/timetableController');
 const tripController = require('../controllers/tripController');
 const discountController = require('../controllers/discountController');
 const fareController = require('../controllers/fareController');
+const bookingController = require('../controllers/bookingController');
 
 // Address CRUD routes
 router.post('/addresses', addressController.create);
@@ -54,6 +55,10 @@ router.get('/lines', lineController.getAll);
 router.get('/lines/:id', lineController.getById);
 router.put('/lines/:id', lineController.update);
 router.delete('/lines/:id', lineController.delete);
+// Get all stops for a specific line_code and direction
+router.get('/lines/:line_code/:direction/stops', lineController.getStopsForLineCodeAndDirection);
+// Get timetable for a specific line_code and direction
+router.get('/lines/:line_code/:direction/timetable', lineController.getTimetableForLineCodeAndDirection);
 
 // LineStop CRUD routes
 router.post('/line-stops', lineStopController.create);
@@ -88,7 +93,7 @@ router.get('/trips/:id/line', tripController.getLine);
 // Get bus for a specific trip
 router.get('/trips/:id/bus', tripController.getBus);
 // Get all stops and departure times for a specific trip
-router.get('/trips/stops', tripController.getTripStops);
+router.get('/trips/:id/stops', tripController.getTripStops);
 
 // Discount CRUD routes
 router.post('/discounts', discountController.create);
@@ -103,5 +108,30 @@ router.get('/fares', fareController.getAll);
 router.get('/fares/:id', fareController.getById);
 router.put('/fares/:id', fareController.update);
 router.delete('/fares/:id', fareController.delete);
+// Get total price for a line between start and end stops
+router.get('/fares/total-price', fareController.getTotalPrice);
+// Get line for a specific fare
+router.get('/fares/:id/line', fareController.getLine);
+// Get start line stop for a specific fare
+router.get('/fares/:id/start-line-stop', fareController.getStartLineStop);
+// Get end line stop for a specific fare
+router.get('/fares/:id/end-line-stop', fareController.getEndLineStop);
+
+// Booking CRUD routes
+router.post('/bookings', bookingController.create);
+router.get('/bookings', bookingController.getAll);
+router.get('/bookings/:id', bookingController.getById);
+router.put('/bookings/:id', bookingController.update);
+router.delete('/bookings/:id', bookingController.delete);
+// Get passenger for a specific booking
+router.get('/bookings/:id/passenger', bookingController.getPassenger);
+// Get start line stop for a specific booking
+router.get('/bookings/:id/start-line-stop', bookingController.getStartLineStop);
+// Get end line stop for a specific booking
+router.get('/bookings/:id/end-line-stop', bookingController.getEndLineStop);
+// Get all bookings for a specific passenger
+router.get('/passengers/:passengerId/bookings', bookingController.getAllForPassenger);
+// Get all bookings for a specific trip
+router.get('/trips/:tripId/bookings', bookingController.getAllForTrip);
 
 module.exports = router;

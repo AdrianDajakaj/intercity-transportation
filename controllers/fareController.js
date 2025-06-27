@@ -45,3 +45,53 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Get total price for a line between start and end stops (inclusive)
+exports.getTotalPrice = async (req, res) => {
+  const { line_id, start, end } = req.query;
+  if (!line_id || !start || !end) {
+    return res.status(400).json({ error: 'Missing line_id, start, or end parameter' });
+  }
+  try {
+    const result = await Fare.getTotalPrice(line_id, start, end);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get line for a specific fare
+exports.getLine = async (req, res) => {
+  try {
+    const fare_id = req.params.id;
+    const line = await Fare.getLineForFare(fare_id);
+    if (!line) return res.status(404).json({ error: 'Line not found for this fare' });
+    res.json(line);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get start line stop for a specific fare
+exports.getStartLineStop = async (req, res) => {
+  try {
+    const fare_id = req.params.id;
+    const stop = await Fare.getStartLineStopForFare(fare_id);
+    if (!stop) return res.status(404).json({ error: 'Start line stop not found for this fare' });
+    res.json(stop);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get end line stop for a specific fare
+exports.getEndLineStop = async (req, res) => {
+  try {
+    const fare_id = req.params.id;
+    const stop = await Fare.getEndLineStopForFare(fare_id);
+    if (!stop) return res.status(404).json({ error: 'End line stop not found for this fare' });
+    res.json(stop);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

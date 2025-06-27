@@ -40,6 +40,34 @@ const Fare = {
 
   delete: async (id) => {
     await db.query('DELETE FROM fare WHERE fare_id = ?', [id]);
+  },
+
+  // Get total price for a line between start and end stops (inclusive)
+  getTotalPrice: async (line_id, start, end) => {
+    const sql = `SELECT SUM(base_price) AS total_price FROM fare WHERE line_id = ? AND start_line_stop_id >= ? AND end_line_stop_id <= ?`;
+    const [rows] = await db.query(sql, [line_id, start, end]);
+    return rows[0];
+  },
+
+  // Get line for a specific fare
+  getLineForFare: async (fare_id) => {
+    const sql = `SELECT l.* FROM line l JOIN fare f ON l.line_id = f.line_id WHERE f.fare_id = ?`;
+    const [rows] = await db.query(sql, [fare_id]);
+    return rows[0];
+  },
+
+  // Get start line stop for a specific fare
+  getStartLineStopForFare: async (fare_id) => {
+    const sql = `SELECT ls.* FROM line_stop ls JOIN fare f ON ls.line_stop_id = f.start_line_stop_id WHERE f.fare_id = ?`;
+    const [rows] = await db.query(sql, [fare_id]);
+    return rows[0];
+  },
+
+  // Get end line stop for a specific fare
+  getEndLineStopForFare: async (fare_id) => {
+    const sql = `SELECT ls.* FROM line_stop ls JOIN fare f ON ls.line_stop_id = f.end_line_stop_id WHERE f.fare_id = ?`;
+    const [rows] = await db.query(sql, [fare_id]);
+    return rows[0];
   }
 };
 
