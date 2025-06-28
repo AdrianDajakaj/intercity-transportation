@@ -58,5 +58,12 @@ module.exports = {
     const sql = `SELECT * FROM line_stop`;
     const [rows] = await db.execute(sql);
     return rows;
-  }
+  },
+
+  // Get all line stops for a line with stop names
+  getAllByLineIdWithStopName: async (db, line_id) => {
+    const sql = `SELECT ls.line_stop_id, ls.sequence, bs.stop_name FROM line_stop ls JOIN bus_stop bs ON ls.stop_id = bs.stop_id WHERE ls.line_id = ? ORDER BY ls.sequence`;
+    const [rows] = await db.query(sql, [line_id]);
+    return rows;
+  },
 };

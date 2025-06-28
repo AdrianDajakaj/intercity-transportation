@@ -1,0 +1,21 @@
+<div class="container">
+  <h2>Wybierz godzinę odjazdu</h2>
+  <% if (departures.length === 0) { %>
+    <div class="no-trips">Brak kursów na wybrany dzień dla tej trasy.</div>
+  <% } else { %>
+    <div class="departure-tiles">
+      <% departures.forEach(function(dep, idx) { %>
+        <div class="departure-tile" data-idx="<%= idx %>">
+          <div><b>Odjazd:</b> <%= dep.departure_time %> z <%= dep.departure_stop %></div>
+          <div><b>Przyjazd:</b> <%= dep.arrival_time %> do <%= dep.arrival_stop %></div>
+        </div>
+      <% }); %>
+    </div>
+    <% if (passenger) { %>
+      <div class="book-btn-container">
+        <button id="book-btn" class="btn btn-primary mt-3">Zarezerwuj</button>
+      </div>
+    <% } %>
+  <% } %>
+</div>
+<script src="/js/timetable.js"></script>

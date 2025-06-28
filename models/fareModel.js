@@ -42,11 +42,65 @@ const Fare = {
     await db.query('DELETE FROM fare WHERE fare_id = ?', [id]);
   },
 
-  // Get total price for a line between start and end stops (inclusive)
-  getTotalPrice: async (line_id, start, end) => {
-    const sql = `SELECT SUM(base_price) AS total_price FROM fare WHERE line_id = ? AND start_line_stop_id >= ? AND end_line_stop_id <= ?`;
-    const [rows] = await db.query(sql, [line_id, start, end]);
-    return rows[0];
+  // Get total price for a line between start and end stops (SQL range approach, fallback to segment-by-segment)
+  getTotalPrice: async (line_id, start_line_stop_id, end_line_stop_id) => {
+    // Force all IDs to integers
+    line_id = parseInt(line_id);
+    start_line_stop_id = parseInt(start_line_stop_id);
+    end_line_stop_id = parseInt(end_line_stop_id);
+    // Get start and end stop names (correct column: stop_name)
+    const [startRows] = await db.query('SELECT bs.stop_name AS stop_name FROM line_stop ls JOIN bus_stop bs ON ls.stop_id = bs.stop_id WHERE ls.line_stop_id = ?', [start_line_stop_id]);
+    const [endRows] = await db.query('SELECT bs.stop_name AS stop_name FROM line_stop ls JOIN bus_stop bs ON ls.stop_id = bs.stop_id WHERE ls.line_stop_id = ?', [end_line_stop_id]);
+    const start_stop_name = startRows[0] ? startRows[0].stop_name : null;
+    const end_stop_name = endRows[0] ? endRows[0].stop_name : null;
+    // Try SQL range approach (works if fare table is filled for all direct pairs)
+    let sql, rows;
+    if (start_line_stop_id < end_line_stop_id) {
+      sql = `SELECT SUM(base_price) AS total_price FROM fare WHERE line_id = ? AND start_line_stop_id >= ? AND end_line_stop_id <= ?`;
+      [rows] = await db.query(sql, [line_id, start_line_stop_id, end_line_stop_id]);
+    } else if (start_line_stop_id > end_line_stop_id) {
+      sql = `SELECT SUM(base_price) AS total_price FROM fare WHERE line_id = ? AND start_line_stop_id <= ? AND end_line_stop_id >= ?`;
+      [rows] = await db.query(sql, [line_id, start_line_stop_id, end_line_stop_id]);
+    } else {
+      return { total_price: 0, start_stop_name, end_stop_name };
+    }
+    if (rows && rows[0] && rows[0].total_price !== null) {
+      return { total_price: Number(rows[0].total_price), start_stop_name, end_stop_name };
+    }
+    // Fallback: segment-by-segment (robust for any fare table)
+    const stopsSql = `SELECT line_stop_id, sequence FROM line_stop WHERE line_id = ? ORDER BY sequence`;
+    const [stopsRows] = await db.query(stopsSql, [line_id]);
+    if (stopsRows.length < 2) return { total_price: null, start_stop_name, end_stop_name };
+    const idToSeq = {};
+    stopsRows.forEach(row => { idToSeq[row.line_stop_id] = row.sequence; });
+    const startSeq = idToSeq[start_line_stop_id];
+    const endSeq = idToSeq[end_line_stop_id];
+    if (startSeq === undefined || endSeq === undefined) return { total_price: null, start_stop_name, end_stop_name };
+    const path = [];
+    if (startSeq < endSeq) {
+      for (let seq = startSeq; seq < endSeq; seq++) {
+        const from = stopsRows.find(r => r.sequence === seq);
+        const to = stopsRows.find(r => r.sequence === seq + 1);
+        if (from && to) path.push([from.line_stop_id, to.line_stop_id]);
+      }
+    } else if (startSeq > endSeq) {
+      for (let seq = startSeq; seq > endSeq; seq--) {
+        const from = stopsRows.find(r => r.sequence === seq);
+        const to = stopsRows.find(r => r.sequence === seq - 1);
+        if (from && to) path.push([from.line_stop_id, to.line_stop_id]);
+      }
+    } else {
+      return { total_price: 0, start_stop_name, end_stop_name };
+    }
+    if (path.length === 0) return { total_price: null, start_stop_name, end_stop_name };
+    let total = 0;
+    for (const [fromId, toId] of path) {
+      const segSql = `SELECT base_price FROM fare WHERE line_id = ? AND start_line_stop_id = ? AND end_line_stop_id = ?`;
+      const [segRows] = await db.query(segSql, [line_id, fromId, toId]);
+      if (!segRows[0]) return { total_price: null, start_stop_name, end_stop_name };
+      total += Number(segRows[0].base_price);
+    }
+    return { total_price: total, start_stop_name, end_stop_name };
   },
 
   // Get line for a specific fare

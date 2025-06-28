@@ -61,5 +61,27 @@ module.exports = {
     const sql = `SELECT * FROM trip`;
     const [rows] = await db.execute(sql);
     return rows;
-  }
+  },
+
+  // Get all stops and departure times for a specific trip (by trip_id)
+  getTripStops: async (db, trip_id) => {
+    // Find the trip first
+    const [tripRows] = await db.execute('SELECT * FROM trip WHERE trip_id = ?', [trip_id]);
+    const trip = tripRows[0];
+    if (!trip) return [];
+    const sql = `SELECT 
+      ls.line_stop_id,
+      ls.sequence,
+      bs.stop_name,
+      tt.departure_time
+    FROM line_stop ls
+    JOIN bus_stop bs ON bs.stop_id = ls.stop_id
+    JOIN timetable tt ON tt.line_stop_id = ls.line_stop_id
+    WHERE 
+      ls.line_id = ?
+      AND tt.run_number = ?
+    ORDER BY ls.sequence`;
+    const [rows] = await db.execute(sql, [trip.line_id, trip.run_number]);
+    return rows;
+  },
 };

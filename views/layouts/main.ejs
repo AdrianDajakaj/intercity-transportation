@@ -8,14 +8,29 @@
 </head>
 <body>
     <header>
-        <nav>
-            <!-- Navigation will go here -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <a href="/">Intercity</a>
+            </div>
+            <div class="navbar-center">
+                <a href="/line-schedules">Rozkład jazdy</a>
+            </div>
+            <div class="navbar-right">
+                <% if (passenger) { %>
+                  <span class="navbar-greeting">Hello, <%= passenger.name %>!</span>
+                  <a href="#" id="logout-link">Log out</a>
+                <% } else { %>
+                  <a href="/login">Zaloguj</a>
+                <% } %>
+            </div>
         </nav>
     </header>
     <main>
+        <%- body %>
     </main>
     <footer>
         <!-- Footer will go here -->
     </footer>
+    <script src="/js/logout.js"></script>
 </body>
 </html>

@@ -36,6 +36,13 @@ module.exports = {
     return rows[0];
   },
 
+  // Get a passenger by email
+  getByEmail: async (db, email) => {
+    const sql = `SELECT * FROM passenger WHERE email = ?`;
+    const [rows] = await db.execute(sql, [email]);
+    return rows[0];
+  },
+
   // Update a passenger by id
   update: async (db, passenger_id, data) => {
     const sql = `UPDATE passenger SET passenger_name=?, passenger_surname=?, email=?, password_hash=?, address_id=? WHERE passenger_id=?`;

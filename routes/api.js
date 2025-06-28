@@ -30,6 +30,10 @@ router.delete('/passengers/:id', passengerController.delete);
 router.get('/passengers/:id/address', passengerController.getAddress);
 // Update address for a specific passenger
 router.put('/passengers/:id/address', passengerController.updateAddress);
+// Passenger login route
+router.post('/passengers/login', passengerController.login);
+// Passenger logout route
+router.post('/passengers/logout', passengerController.logout);
 
 // Bus CRUD routes
 router.post('/buses', busController.create);
@@ -72,6 +76,16 @@ router.get('/line-stops/:id/line', lineStopController.getLine);
 router.get('/line-stops/:id/bus-stop', lineStopController.getBusStop);
 // Get line and bus stop for a specific line stop
 router.get('/line-stops/:id/line-bus-stop', lineStopController.getLineAndBusStop);
+// Get all line stops for a line (for frontend dynamic select)
+router.get('/line-stops', async (req, res) => {
+    const db = require('../config/db');
+    const lineStopModel = require('../models/lineStopModel');
+    const busStopModel = require('../models/busStopModel');
+    const line_id = req.query.line_id;
+    if (!line_id) return res.status(400).json({ error: 'Missing line_id' });
+    const stops = await lineStopModel.getAllByLineIdWithStopName(db, line_id);
+    res.json(stops);
+});
 
 // Timetable CRUD routes
 router.post('/timetables', timetableController.create);
@@ -108,8 +122,8 @@ router.get('/fares', fareController.getAll);
 router.get('/fares/:id', fareController.getById);
 router.put('/fares/:id', fareController.update);
 router.delete('/fares/:id', fareController.delete);
-// Get total price for a line between start and end stops
-router.get('/fares/total-price', fareController.getTotalPrice);
+// Get total price for a line between start and end stops (line_id as path param)
+router.get('/fares/total-price/:line_id', fareController.getTotalPrice);
 // Get line for a specific fare
 router.get('/fares/:id/line', fareController.getLine);
 // Get start line stop for a specific fare
@@ -133,5 +147,7 @@ router.get('/bookings/:id/end-line-stop', bookingController.getEndLineStop);
 router.get('/passengers/:passengerId/bookings', bookingController.getAllForPassenger);
 // Get all bookings for a specific trip
 router.get('/trips/:tripId/bookings', bookingController.getAllForTrip);
+// Download PDF ticket for a booking
+router.get('/bookings/:id/ticket', bookingController.downloadTicket);
 
 module.exports = router;

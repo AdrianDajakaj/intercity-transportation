@@ -2,15 +2,25 @@
 const db = require('../config/db');
 const passengerModel = require('../models/passengerModel');
 const addressModel = require('../models/addressModel');
+const bcrypt = require('bcrypt');
 
 module.exports = {
   // Create a new passenger
   create: async (req, res) => {
     try {
-      const id = await passengerModel.create(db, req.body);
+      let data = req.body;
+      if (data.password) {
+        data.password_hash = await bcrypt.hash(data.password, 10);
+        delete data.password;
+      }
+      const id = await passengerModel.create(db, data);
       res.status(201).json({ passenger_id: id });
     } catch (err) {
-      res.status(500).json({ error: 'Failed to create passenger' });
+      if (err.code === 'ER_DUP_ENTRY') {
+        res.status(400).json({ error: 'Email already registered' });
+      } else {
+        res.status(500).json({ error: 'Failed to create passenger' });
+      }
     }
   },
 
@@ -82,5 +92,40 @@ module.exports = {
     } catch (err) {
       res.status(500).json({ error: 'Failed to update address for passenger' });
     }
+  },
+
+  // Login endpoint with session
+  login: async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+      const passenger = await passengerModel.getByEmail(db, email);
+      if (!passenger) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+      const match = await bcrypt.compare(password, passenger.password_hash);
+      if (!match) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+      // Set session
+      req.session.passenger = {
+        passenger_id: passenger.passenger_id,
+        name: passenger.passenger_name,
+        surname: passenger.passenger_surname,
+        email: passenger.email
+      };
+      res.json({ success: true, passenger_id: passenger.passenger_id, name: passenger.passenger_name, surname: passenger.passenger_surname, email: passenger.email });
+    } catch (err) {
+      res.status(500).json({ error: 'Login failed' });
+    }
+  },
+
+  // Logout endpoint
+  logout: (req, res) => {
+    req.session.destroy(() => {
+      res.json({ success: true });
+    });
   }
 };

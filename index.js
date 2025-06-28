@@ -15,6 +15,8 @@ const discountModel = require('./models/discountModel'); // Ensure discountModel
 const fareModel = require('./models/fareModel'); // Ensure fareModel is required
 const bookingModel = require('./models/bookingModel'); // Ensure bookingModel is required
 const expressLayouts = require('express-ejs-layouts');
+const session = require('express-session');
+const lineScheduleController = require('./controllers/lineScheduleController');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +26,20 @@ const BASE_PATH = process.env.BASE_PATH || '/';
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'supersecret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
+
+// Helper middleware to expose session passenger to all views
+app.use((req, res, next) => {
+  res.locals.passenger = req.session.passenger || null;
+  next();
+});
 
 // EJS setup
 app.set('view engine', 'ejs');
@@ -36,9 +52,64 @@ app.set('layout', 'layouts/main');
 app.use(BASE_PATH + 'api', apiRouter);
 
 // Home route
-app.get(BASE_PATH, (req, res) => {
-  res.render('index', { basePath: BASE_PATH });
+app.get(BASE_PATH, async (req, res) => {
+  // Fetch all lines for the chooser
+  const lines = await lineModel.getAll(db);
+  res.render('index', { basePath: BASE_PATH, lines });
 });
+
+// Login page route
+app.get(BASE_PATH + 'login', (req, res) => {
+  res.render('login', { title: 'Login' });
+});
+
+// Registration page route
+app.get(BASE_PATH + 'register', (req, res) => {
+  res.render('register', { title: 'Register' });
+});
+
+// Timetable search result page
+app.get(BASE_PATH + 'timetable', async (req, res) => {
+  // Parse query params from connection-finder
+  const { line_code_direction, departure_from, departure_to, departure_date } = req.query;
+  if (!line_code_direction || !departure_from || !departure_to || !departure_date) {
+    return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+  }
+  // Parse line_code and direction
+  const [line_code, direction] = line_code_direction.split('_');
+  // Find line by code and direction
+  const lines = await lineModel.getAll(db);
+  const line = lines.find(l => l.line_code === line_code && String(l.direction) === direction);
+  if (!line) return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+  // Find all trips for this line and date
+  const trips = await tripModel.getAll(db);
+  const tripsForDay = trips.filter(trip => {
+    let tripDateStr = trip.trip_date instanceof Date
+      ? trip.trip_date.toISOString().slice(0, 10)
+      : String(trip.trip_date);
+    return trip.line_id === line.line_id && tripDateStr === departure_date;
+  });
+  // For each trip, get stops and times
+  let departures = [];
+  for (const trip of tripsForDay) {
+    // Get all stops for this trip (ordered)
+    const stops = await tripModel.getTripStops(db, trip.trip_id);
+    const depIdx = stops.findIndex(s => String(s.line_stop_id) === String(departure_from));
+    const arrIdx = stops.findIndex(s => String(s.line_stop_id) === String(departure_to));
+    if (depIdx === -1 || arrIdx === -1 || arrIdx <= depIdx) continue;
+    departures.push({
+      trip_id: trip.trip_id,
+      departure_time: stops[depIdx].departure_time,
+      departure_stop: stops[depIdx].stop_name,
+      arrival_time: stops[arrIdx].departure_time,
+      arrival_stop: stops[arrIdx].stop_name
+    });
+  }
+  res.render('timetable', { departures, passenger: req.session.passenger || null });
+});
+
+// New all-lines schedule page
+app.get(BASE_PATH + 'line-schedules', lineScheduleController.showAllLineSchedules);
 
 // Ensure address, passenger, bus, bus_stop, line, line_stop, timetable, trip, discount, fare, and booking tables exist on startup
 (async () => {
@@ -544,9 +615,7 @@ app.get(BASE_PATH, (req, res) => {
         [50, 4, 127, '22:55', 0],
         [51, 4, 127, '23:25', 0],
         [52, 4, 127, '23:50', 0],
-        [53, 4, 127, '00:15', 1],
-        [54, 4, 127, '00:35', 1],
-      ];
+        ];
       await db.query(
         'INSERT INTO timetable (line_stop_id, run_number, day_mask, departure_time, offset_days) VALUES ?',
         [timetables]

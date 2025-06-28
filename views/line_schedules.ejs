@@ -1,0 +1,44 @@
+<div class="container">
+  <h2>Rozkłady jazdy wszystkich linii</h2>
+  <% if (lines.length === 0) { %>
+    <div class="no-lines">Brak linii do wyświetlenia.</div>
+  <% } else { %>
+    <% lines.forEach(function(line) { %>
+      <div class="line-schedule-block">
+        <h3>Linia <%= line.code %> - <%= line.name %></h3>
+        <% if (!line.stops || line.stops.length === 0) { %>
+          <div class="no-stops">Brak przystanków dla tej linii.</div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="line-schedule-table">
+              <thead>
+                <tr>
+                  <th>Przystanek</th>
+                  <% line.departureTimes.forEach(function(depTime) { %>
+                    <th><%= depTime %></th>
+                  <% }); %>
+                </tr>
+              </thead>
+              <tbody>
+                <% line.stops.forEach(function(stop, stopIdx) { %>
+                  <tr>
+                    <td><%= stop.name %></td>
+                    <% line.departureTimes.forEach(function(depTime, depIdx) { %>
+                      <td>
+                        <% if (line.timesByStop[stop.id] && line.timesByStop[stop.id][depIdx]) { %>
+                          <%= line.timesByStop[stop.id][depIdx] %>
+                        <% } else { %>
+                          -
+                        <% } %>
+                      </td>
+                    <% }); %>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    <% }); %>
+  <% } %>
+</div>

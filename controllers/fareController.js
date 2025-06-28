@@ -46,14 +46,20 @@ exports.delete = async (req, res) => {
   }
 };
 
-// Get total price for a line between start and end stops (inclusive)
+// Get total price for a line between start and end stops (line_id as path param)
 exports.getTotalPrice = async (req, res) => {
-  const { line_id, start, end } = req.query;
-  if (!line_id || !start || !end) {
-    return res.status(400).json({ error: 'Missing line_id, start, or end parameter' });
+  let { start_line_stop_id, end_line_stop_id } = req.query;
+  let { line_id } = req.params;
+  if (!line_id || !start_line_stop_id || !end_line_stop_id) {
+    return res.status(400).json({ error: 'Missing line_id, start_line_stop_id, or end_line_stop_id parameter' });
   }
+  // Ensure all IDs are integers for DB queries
+  line_id = parseInt(line_id);
+  start_line_stop_id = parseInt(start_line_stop_id);
+  end_line_stop_id = parseInt(end_line_stop_id);
   try {
-    const result = await Fare.getTotalPrice(line_id, start, end);
+    const result = await Fare.getTotalPrice(line_id, start_line_stop_id, end_line_stop_id);
+    if (result.total_price === null) return res.status(404).json({ error: 'Fare not found' });
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
