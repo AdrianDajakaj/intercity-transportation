@@ -8,6 +8,9 @@
         <div class="departure-tile" data-idx="<%= idx %>">
           <div><b>Odjazd:</b> <%= dep.departure_time %> z <%= dep.departure_stop %></div>
           <div><b>Przyjazd:</b> <%= dep.arrival_time %> do <%= dep.arrival_stop %></div>
+          <% if (dep.price !== null && dep.price !== undefined) { %>
+            <div class="tile-price"><b>Cena:</b> <%= dep.price %> zł</div>
+          <% } %>
         </div>
       <% }); %>
     </div>

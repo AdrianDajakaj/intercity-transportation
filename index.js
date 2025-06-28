@@ -71,7 +71,7 @@ app.get(BASE_PATH + 'register', (req, res) => {
 // Timetable search result page
 app.get(BASE_PATH + 'timetable', async (req, res) => {
   // Parse query params from connection-finder
-  const { line_code_direction, departure_from, departure_to, departure_date } = req.query;
+  const { line_code_direction, departure_from, departure_to, departure_date, ticket_type } = req.query;
   if (!line_code_direction || !departure_from || !departure_to || !departure_date) {
     return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
   }
@@ -89,6 +89,24 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
       : String(trip.trip_date);
     return trip.line_id === line.line_id && tripDateStr === departure_date;
   });
+  // Calculate price (with or without discount)
+  let price = null;
+  if (tripsForDay.length > 0) {
+    const fareModel = require('./models/fareModel');
+    const discountModel = require('./models/discountModel');
+    const fare = await fareModel.getTotalPrice(line.line_id, departure_from, departure_to);
+    let basePrice = fare && fare.total_price !== null ? fare.total_price : null;
+    if (basePrice !== null && ticket_type === 'ulgowy') {
+      const studentDiscount = await discountModel.getById(db, 1);
+      if (studentDiscount && studentDiscount.percent_off) {
+        price = (basePrice * (1 - studentDiscount.percent_off / 100)).toFixed(2);
+      } else {
+        price = basePrice;
+      }
+    } else {
+      price = basePrice;
+    }
+  }
   // For each trip, get stops and times
   let departures = [];
   for (const trip of tripsForDay) {
@@ -102,7 +120,8 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
       departure_time: stops[depIdx].departure_time,
       departure_stop: stops[depIdx].stop_name,
       arrival_time: stops[arrIdx].departure_time,
-      arrival_stop: stops[arrIdx].stop_name
+      arrival_stop: stops[arrIdx].stop_name,
+      price
     });
   }
   res.render('timetable', { departures, passenger: req.session.passenger || null });
