@@ -22,18 +22,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_PATH = process.env.BASE_PATH || '/';
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Static files with BASE_PATH support
 if (BASE_PATH === '/') {
   app.use(express.static(path.join(__dirname, 'public')));
 } else {
   app.use(BASE_PATH, express.static(path.join(__dirname, 'public')));
 }
 
-// Session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
@@ -41,46 +38,36 @@ app.use(session({
   cookie: { secure: false } // Set to true if using HTTPS
 }));
 
-// Helper middleware to expose session passenger to all views
 app.use((req, res, next) => {
   res.locals.passenger = req.session.passenger || null;
   res.locals.basePath = BASE_PATH.endsWith('/') ? BASE_PATH : BASE_PATH + '/';
   next();
 });
 
-// EJS setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(expressLayouts); // ✅ dodaj to
 app.set('layout', 'layouts/main');
 
-// Mount API router
 app.use(BASE_PATH + 'api', apiRouter);
 
-// Home route
 app.get(BASE_PATH, async (req, res) => {
-  // Fetch all lines for the chooser
   const lines = await lineModel.getAll(db);
   res.render('index', { basePath: BASE_PATH, lines });
 });
 
-// Login page route
 app.get(BASE_PATH + 'login', (req, res) => {
   res.render('login', { title: 'Login' });
 });
 
-// Registration page route
 app.get(BASE_PATH + 'register', (req, res) => {
   res.render('register', { title: 'Register' });
 });
 
-// Timetable search result page
 app.get(BASE_PATH + 'timetable', async (req, res) => {
   console.log('=== TIMETABLE ROUTE HIT ===');
-  // Debug: log query params
   console.log('TIMETABLE QUERY:', req.query);
-  // Parse query params from connection-finder
   const { line_code_direction, departure_from, departure_to, departure_date, ticket_type } = req.query;
   if (!line_code_direction || !departure_from || !departure_to || !departure_date) {
     console.log('Missing required query params');
@@ -88,9 +75,7 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
   }
   
   try {
-  // Parse line_code and direction
   const [line_code, direction] = line_code_direction.split('_');
-  // Find line by code and direction
   const lines = await lineModel.getAll(db);
   const line = lines.find(l => l.line_code === line_code && String(l.direction) === direction);
   console.log('Found line:', line);
@@ -98,7 +83,6 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
     console.log('Line not found');
     return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
   }
-  // Find all trips for this line and date
   const trips = await tripModel.getAll(db);
   const tripsForDay = trips.filter(trip => {
     let tripDateStr = trip.trip_date instanceof Date
@@ -107,7 +91,6 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
     return trip.line_id === line.line_id && tripDateStr === departure_date;
   });
   console.log('Trips for day:', tripsForDay);
-  // Calculate price (with or without discount)
   let price = null;
   if (tripsForDay.length > 0) {
     const fareModel = require('./models/fareModel');
@@ -125,10 +108,8 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
       price = basePrice;
     }
   }
-  // For each trip, get stops and times
   let departures = [];
   for (const trip of tripsForDay) {
-    // Get all stops for this trip (ordered)
     const stops = await tripModel.getTripStops(db, trip.trip_id);
     console.log('Trip', trip.trip_id, 'stops:', stops);
     const depIdx = stops.findIndex(s => String(s.line_stop_id) === String(departure_from));
@@ -162,10 +143,8 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
   }
 });
 
-// New all-lines schedule page
 app.get(BASE_PATH + 'line-schedules', lineScheduleController.showAllLineSchedules);
 
-// Reservations page - show all bookings for logged-in user
 app.get(BASE_PATH + 'reservations', async (req, res) => {
   if (!req.session.passenger || !req.session.passenger.passenger_id) {
     return res.redirect(BASE_PATH + 'login');
@@ -177,7 +156,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
       throw new Error('Brak passenger_id w sesji.');
     }
 
-    // Get detailed reservations for the logged-in passenger
     const sql = `
       SELECT 
         b.booking_id,
@@ -247,7 +225,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
   }
 });
 
-// Ensure address, passenger, bus, bus_stop, line, line_stop, timetable, trip, discount, fare, and booking tables exist on startup
 (async () => {
   try {
     await addressModel.createTable(db);
@@ -262,7 +239,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
     await fareModel.createTable(db);
     await bookingModel.createTable(db);
 
-    // Insert addresses if table is empty
     const [addressRows] = await db.query('SELECT COUNT(*) as count FROM address');
     if (addressRows[0].count === 0) {
       const addresses = [
