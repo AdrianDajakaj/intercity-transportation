@@ -1,8 +1,4 @@
-// Discount model for MySQL
-// Table: discount
-
 module.exports = {
-  // Create the discount table if it doesn't exist
   createTable: async (db) => {
     const sql = `CREATE TABLE IF NOT EXISTS discount (
       discount_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -13,7 +9,6 @@ module.exports = {
     await db.execute(sql);
   },
 
-  // Create a new discount
   create: async (db, data) => {
     const sql = `INSERT INTO discount (discount_code, discount_description, percent_off) VALUES (?, ?, ?)`;
     const [result] = await db.execute(sql, [
@@ -24,14 +19,12 @@ module.exports = {
     return result.insertId;
   },
 
-  // Read (get) a discount by id
   getById: async (db, discount_id) => {
     const sql = `SELECT * FROM discount WHERE discount_id = ?`;
     const [rows] = await db.execute(sql, [discount_id]);
     return rows[0];
   },
 
-  // Update a discount by id
   update: async (db, discount_id, data) => {
     const sql = `UPDATE discount SET discount_code=?, discount_description=?, percent_off=? WHERE discount_id=?`;
     const [result] = await db.execute(sql, [
@@ -43,14 +36,12 @@ module.exports = {
     return result.affectedRows > 0;
   },
 
-  // Delete a discount by id
   delete: async (db, discount_id) => {
     const sql = `DELETE FROM discount WHERE discount_id = ?`;
     const [result] = await db.execute(sql, [discount_id]);
     return result.affectedRows > 0;
   },
 
-  // List all discounts
   getAll: async (db) => {
     const sql = `SELECT * FROM discount`;
     const [rows] = await db.execute(sql);

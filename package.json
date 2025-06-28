@@ -1,7 +1,6 @@
 {
   "name": "intercity_transportation_system",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -23,5 +22,14 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdrianDajakaj/intercity-transportation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AdrianDajakaj/intercity-transportation/issues"
+  },
+  "homepage": "https://github.com/AdrianDajakaj/intercity-transportation#readme",
+  "description": ""
 }

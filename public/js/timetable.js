@@ -1,6 +1,4 @@
-// Timetable tile selection logic
 document.addEventListener('DOMContentLoaded', function() {
-  // Parse departures from script tag FIRST
   const script = document.getElementById('departures-data');
   if (script) {
     try {
@@ -21,12 +19,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const bookBtn = document.getElementById('book-btn');
   let selectedTile = null;
 
-  // Ensure the book button is disabled by default on page load
   if (bookBtn) bookBtn.disabled = true;
 
   let selectedTileIdx = null;
 
-  // Add click listeners to tiles
   tiles.forEach((tile, idx) => {
     tile.addEventListener('click', function() {
       if (selectedTile) {
@@ -45,36 +41,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Booking logic
   if (bookBtn) {
     bookBtn.addEventListener('click', async function() {
       if (selectedTileIdx === null) return;
       const tile = tiles[selectedTileIdx];
       const dep = window.departures && window.departures[selectedTileIdx];
       if (!dep) return alert('Nie można pobrać danych połączenia.');
-      // Get selected discount from UI (if present)
       let selectedDiscountId = null;
       const discountSelect = document.getElementById('discount-select');
       if (discountSelect) {
         selectedDiscountId = discountSelect.value || null;
         if (selectedDiscountId === '' || selectedDiscountId === 'null' || selectedDiscountId === '0') selectedDiscountId = null;
       } else if (typeof dep.discount_id !== 'undefined') {
-        // fallback: use discount_id from departures only if set by user, not pre-discounted
         selectedDiscountId = dep.discount_id || null;
       }
-      // Prepare booking payload
       const payload = {
         trip_id: dep.trip_id,
         start_line_stop_id: dep.start_line_stop_id,
         end_line_stop_id: dep.end_line_stop_id,
         discount_id: selectedDiscountId,
-        // seat_number and deck will be assigned by backend if not provided
       };
-      // Debug: log payload
       console.log('Booking payload:', payload);
-      // POST to /api/bookings
       try {
-        const res = await fetch('/api/bookings', {
+        const basePath = window.BASE_PATH || '/';
+        const res = await fetch(`${basePath}api/bookings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

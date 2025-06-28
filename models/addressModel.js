@@ -1,8 +1,4 @@
-// Address model for MySQL
-// Table: address
-
 module.exports = {
-  // Create the address table if it doesn't exist
   createTable: async (db) => {
     const sql = `CREATE TABLE IF NOT EXISTS address (
       address_id   INT AUTO_INCREMENT PRIMARY KEY,
@@ -16,7 +12,6 @@ module.exports = {
     await db.execute(sql);
   },
 
-  // Create a new address
   create: async (db, data) => {
     const sql = `INSERT INTO address (country, city, postal_code, street, house_number, apartment) VALUES (?, ?, ?, ?, ?, ?)`;
     const [result] = await db.execute(sql, [
@@ -30,14 +25,12 @@ module.exports = {
     return result.insertId;
   },
 
-  // Read (get) an address by id
   getById: async (db, address_id) => {
     const sql = `SELECT * FROM address WHERE address_id = ?`;
     const [rows] = await db.execute(sql, [address_id]);
     return rows[0];
   },
 
-  // Update an address by id
   update: async (db, address_id, data) => {
     const sql = `UPDATE address SET country=?, city=?, postal_code=?, street=?, house_number=?, apartment=? WHERE address_id=?`;
     const [result] = await db.execute(sql, [
@@ -52,14 +45,12 @@ module.exports = {
     return result.affectedRows > 0;
   },
 
-  // Delete an address by id
   delete: async (db, address_id) => {
     const sql = `DELETE FROM address WHERE address_id = ?`;
     const [result] = await db.execute(sql, [address_id]);
     return result.affectedRows > 0;
   },
 
-  // List all addresses
   getAll: async (db) => {
     const sql = `SELECT * FROM address`;
     const [rows] = await db.execute(sql);

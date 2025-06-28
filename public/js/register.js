@@ -1,4 +1,3 @@
-// Handle registration form submission via AJAX
 const form = document.getElementById('register-form');
 const errorDiv = document.getElementById('register-error');
 
@@ -11,15 +10,16 @@ form.addEventListener('submit', async (e) => {
   const password = form.password.value;
 
   try {
-    const res = await fetch('/api/passengers', {
+    const basePath = window.BASE_PATH || '/';
+    const res = await fetch(`${basePath}api/passengers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ passenger_name, passenger_surname, email, password })
     });
     const data = await res.json();
     if (res.ok && data.passenger_id) {
-      // Registration successful, redirect to login
-      window.location.href = '/login';
+      const basePath = window.BASE_PATH || '/';
+      window.location.href = basePath + 'login';
     } else {
       errorDiv.textContent = data.error || 'Registration failed';
       errorDiv.classList.remove('d-none');

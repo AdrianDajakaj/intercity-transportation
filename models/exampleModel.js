@@ -1,2 +1,1 @@
-// Example model
 module.exports = {};

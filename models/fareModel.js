@@ -42,18 +42,14 @@ const Fare = {
     await db.query('DELETE FROM fare WHERE fare_id = ?', [id]);
   },
 
-  // Get total price for a line between start and end stops (SQL range approach, fallback to segment-by-segment)
   getTotalPrice: async (line_id, start_line_stop_id, end_line_stop_id) => {
-    // Force all IDs to integers
     line_id = parseInt(line_id);
     start_line_stop_id = parseInt(start_line_stop_id);
     end_line_stop_id = parseInt(end_line_stop_id);
-    // Get start and end stop names (correct column: stop_name)
     const [startRows] = await db.query('SELECT bs.stop_name AS stop_name FROM line_stop ls JOIN bus_stop bs ON ls.stop_id = bs.stop_id WHERE ls.line_stop_id = ?', [start_line_stop_id]);
     const [endRows] = await db.query('SELECT bs.stop_name AS stop_name FROM line_stop ls JOIN bus_stop bs ON ls.stop_id = bs.stop_id WHERE ls.line_stop_id = ?', [end_line_stop_id]);
     const start_stop_name = startRows[0] ? startRows[0].stop_name : null;
     const end_stop_name = endRows[0] ? endRows[0].stop_name : null;
-    // Try SQL range approach (works if fare table is filled for all direct pairs)
     let sql, rows;
     if (start_line_stop_id < end_line_stop_id) {
       sql = `SELECT SUM(base_price) AS total_price FROM fare WHERE line_id = ? AND start_line_stop_id >= ? AND end_line_stop_id <= ?`;
@@ -67,7 +63,6 @@ const Fare = {
     if (rows && rows[0] && rows[0].total_price !== null) {
       return { total_price: Number(rows[0].total_price), start_stop_name, end_stop_name };
     }
-    // Fallback: segment-by-segment (robust for any fare table)
     const stopsSql = `SELECT line_stop_id, sequence FROM line_stop WHERE line_id = ? ORDER BY sequence`;
     const [stopsRows] = await db.query(stopsSql, [line_id]);
     if (stopsRows.length < 2) return { total_price: null, start_stop_name, end_stop_name };
@@ -103,21 +98,18 @@ const Fare = {
     return { total_price: total, start_stop_name, end_stop_name };
   },
 
-  // Get line for a specific fare
   getLineForFare: async (fare_id) => {
     const sql = `SELECT l.* FROM line l JOIN fare f ON l.line_id = f.line_id WHERE f.fare_id = ?`;
     const [rows] = await db.query(sql, [fare_id]);
     return rows[0];
   },
 
-  // Get start line stop for a specific fare
   getStartLineStopForFare: async (fare_id) => {
     const sql = `SELECT ls.* FROM line_stop ls JOIN fare f ON ls.line_stop_id = f.start_line_stop_id WHERE f.fare_id = ?`;
     const [rows] = await db.query(sql, [fare_id]);
     return rows[0];
   },
 
-  // Get end line stop for a specific fare
   getEndLineStopForFare: async (fare_id) => {
     const sql = `SELECT ls.* FROM line_stop ls JOIN fare f ON ls.line_stop_id = f.end_line_stop_id WHERE f.fare_id = ?`;
     const [rows] = await db.query(sql, [fare_id]);

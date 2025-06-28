@@ -1,8 +1,4 @@
-// Bus model for MySQL
-// Table: bus
-
 module.exports = {
-  // Create the bus table if it doesn't exist
   createTable: async (db) => {
     const sql = `CREATE TABLE IF NOT EXISTS bus (
       bus_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -17,7 +13,6 @@ module.exports = {
     await db.execute(sql);
   },
 
-  // Create a new bus
   create: async (db, data) => {
     const sql = `INSERT INTO bus (registration_number, brand, model, production_year, seats_upper, seats_lower, status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const [result] = await db.execute(sql, [
@@ -32,14 +27,12 @@ module.exports = {
     return result.insertId;
   },
 
-  // Read (get) a bus by id
   getById: async (db, bus_id) => {
     const sql = `SELECT * FROM bus WHERE bus_id = ?`;
     const [rows] = await db.execute(sql, [bus_id]);
     return rows[0];
   },
 
-  // Update a bus by id
   update: async (db, bus_id, data) => {
     const sql = `UPDATE bus SET registration_number=?, brand=?, model=?, production_year=?, seats_upper=?, seats_lower=?, status=? WHERE bus_id=?`;
     const [result] = await db.execute(sql, [
@@ -55,14 +48,12 @@ module.exports = {
     return result.affectedRows > 0;
   },
 
-  // Delete a bus by id
   delete: async (db, bus_id) => {
     const sql = `DELETE FROM bus WHERE bus_id = ?`;
     const [result] = await db.execute(sql, [bus_id]);
     return result.affectedRows > 0;
   },
 
-  // List all buses
   getAll: async (db) => {
     const sql = `SELECT * FROM bus`;
     const [rows] = await db.execute(sql);

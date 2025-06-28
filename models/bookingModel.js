@@ -25,9 +25,7 @@ const Booking = {
   },
 
   create: async (booking) => {
-    // Ensure discount_id is null if not provided or empty
     let discountId = (booking.discount_id === undefined || booking.discount_id === null || booking.discount_id === '') ? null : booking.discount_id;
-    // Ensure base_price is always provided
     if (booking.base_price === undefined || booking.base_price === null) {
       throw new Error('base_price must be provided when creating a booking');
     }
@@ -76,42 +74,36 @@ const Booking = {
     await db.query('DELETE FROM booking WHERE booking_id = ?', [id]);
   },
 
-  // Get passenger for a specific booking
   getPassengerForBooking: async (booking_id) => {
     const sql = `SELECT p.* FROM passenger p JOIN booking b ON p.passenger_id = b.passenger_id WHERE b.booking_id = ?`;
     const [rows] = await db.query(sql, [booking_id]);
     return rows[0];
   },
 
-  // Get start line stop for a specific booking
   getStartLineStopForBooking: async (booking_id) => {
     const sql = `SELECT ls.* FROM line_stop ls JOIN booking b ON ls.line_stop_id = b.start_line_stop_id WHERE b.booking_id = ?`;
     const [rows] = await db.query(sql, [booking_id]);
     return rows[0];
   },
 
-  // Get end line stop for a specific booking
   getEndLineStopForBooking: async (booking_id) => {
     const sql = `SELECT ls.* FROM line_stop ls JOIN booking b ON ls.line_stop_id = b.end_line_stop_id WHERE b.booking_id = ?`;
     const [rows] = await db.query(sql, [booking_id]);
     return rows[0];
   },
 
-  // Get all bookings for a specific passenger
   getAllForPassenger: async (passenger_id) => {
     const sql = `SELECT * FROM booking WHERE passenger_id = ?`;
     const [rows] = await db.query(sql, [passenger_id]);
     return rows;
   },
 
-  // Get all bookings for a specific trip
   getAllForTrip: async (trip_id) => {
     const sql = `SELECT * FROM booking WHERE trip_id = ?`;
     const [rows] = await db.query(sql, [trip_id]);
     return rows;
   },
 
-  // Get reservation card data for a single booking (for PDF)
   getReservationCardData: async (db, booking_id) => {
     const sql = `
       SELECT 
@@ -147,7 +139,6 @@ const Booking = {
     const [rows] = await db.query(sql, [booking_id]);
     if (!rows[0]) return null;
     const reservation = rows[0];
-    // Format and calculate as in /reservations
     if (reservation.trip_date instanceof Date) {
       reservation.trip_date = reservation.trip_date.toISOString().split('T')[0];
     }

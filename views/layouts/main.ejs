@@ -4,24 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intercity Transportation System</title>
-    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="<%= basePath || '/' %>stylesheets/style.css">
+    <script>
+        window.BASE_PATH = '<%= basePath || '/' %>';
+    </script>
 </head>
 <body>
     <header>
         <nav class="navbar">
             <div class="navbar-left">
-                <a href="/">Intercity</a>
+                <a href="<%= basePath || '/' %>">Intercity Trasnportation System</a>
             </div>
             <div class="navbar-center">
-                <a href="/line-schedules">Rozkład jazdy</a>
+                <a href="<%= basePath || '/' %>line-schedules">Rozkład jazdy</a>
             </div>
             <div class="navbar-right">
                 <% if (passenger) { %>
-                  <a href="/reservations">Moje rezerwacje</a>
-                  <span class="navbar-greeting">Hello, <%= passenger.name %>!</span>
-                  <a href="#" id="logout-link">Log out</a>
+                  <a href="<%= basePath || '/' %>reservations">Moje rezerwacje</a>
+                  <a href="#" id="logout-link">Wyloguj</a>
                 <% } else { %>
-                  <a href="/login">Zaloguj</a>
+                  <a href="<%= basePath || '/' %>login">Zaloguj</a>
                 <% } %>
             </div>
         </nav>
@@ -30,8 +32,7 @@
         <%- body %>
     </main>
     <footer>
-        <!-- Footer will go here -->
     </footer>
-    <script src="/js/logout.js"></script>
+    <script src="<%= basePath || '/' %>js/logout.js"></script>
 </body>
 </html>

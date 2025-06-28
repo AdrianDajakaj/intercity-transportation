@@ -11,7 +11,7 @@
     <div class="no-reservations">
       <img src="/img/empty-box.svg" alt="Brak rezerwacji" style="width:80px;opacity:0.5;margin-bottom:1rem;"/>
       <p>Nie masz jeszcze żadnych rezerwacji.</p>
-      <p><a href="/timetable" class="btn btn-primary">Zarezerwuj pierwszy kurs</a></p>
+      <p><a href="<%= basePath || '/' %>timetable" class="btn btn-primary">Zarezerwuj pierwszy kurs</a></p>
     </div>
   <% } else { %>
     <div class="reservations-list">
@@ -111,7 +111,7 @@
           
           <div class="reservation-id">
             Rezerwacja #<%= reservation.booking_id %>
-            <a href="/api/bookings/<%= reservation.booking_id %>/ticket" class="btn btn-secondary" style="margin-left:1rem;" download>Pobierz PDF</a>
+            <a href="<%= basePath || '/' %>api/bookings/<%= reservation.booking_id %>/ticket" class="btn btn-secondary" style="margin-left:1rem;" download>Pobierz PDF</a>
           </div>
         </div>
       <% }); %>
@@ -119,7 +119,6 @@
   <% } %>
 </div>
 
-<!-- Font Awesome for icons (optional, can be replaced with SVGs or removed) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <style>
@@ -130,7 +129,6 @@
   font-weight: bold;
 }
 
-/* Reservations-specific styles */
 .error-message {
   background: #ffebee;
   color: #c62828;

@@ -1,4 +1,3 @@
-// Handles dynamic population of stops based on selected line_code and direction (combined)
 
 document.addEventListener('DOMContentLoaded', function() {
     const lineCodeSelect = document.getElementById('line_code');
@@ -12,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function fetchStops(lineCode, direction) {
-        const res = await fetch(`/api/lines/${lineCode}/${direction}/stops`);
+        const basePath = window.BASE_PATH || '/';
+        const res = await fetch(`${basePath}api/lines/${lineCode}/${direction}/stops`);
         return await res.json();
     }
 
@@ -58,6 +58,5 @@ document.addEventListener('DOMContentLoaded', function() {
         populateToStops(stops, fromSeq);
     });
 
-    // Initial population
     updateStops();
 });

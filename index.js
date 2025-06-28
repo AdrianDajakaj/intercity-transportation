@@ -25,7 +25,13 @@ const BASE_PATH = process.env.BASE_PATH || '/';
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Static files with BASE_PATH support
+if (BASE_PATH === '/') {
+  app.use(express.static(path.join(__dirname, 'public')));
+} else {
+  app.use(BASE_PATH, express.static(path.join(__dirname, 'public')));
+}
 
 // Session middleware
 app.use(session({
@@ -38,6 +44,7 @@ app.use(session({
 // Helper middleware to expose session passenger to all views
 app.use((req, res, next) => {
   res.locals.passenger = req.session.passenger || null;
+  res.locals.basePath = BASE_PATH.endsWith('/') ? BASE_PATH : BASE_PATH + '/';
   next();
 });
 

@@ -1,10 +1,9 @@
 <div class="container">
-    <h1>Welcome to Intercity Transportation System</h1>
-    <p>This is the main page.</p>
     <% if (passenger) { %>
-      <div class="greeting">Welcome, <%= passenger.name %> <%= passenger.surname %>!</div>
+        
+      <h1 class="greeting">Witaj, <%= passenger.name %> <%= passenger.surname %>!</h1>
     <% } %>
-    <form id="connection-finder" method="GET" action="/timetable">
+    <form id="connection-finder" method="GET" action="<%= basePath || '/' %>timetable">
         <div class="ticket-type">
             <label><input type="radio" name="ticket_type" value="normalny" checked> Bilet normalny</label>
             <label><input type="radio" name="ticket_type" value="ulgowy"> Bilet ulgowy</label>
@@ -20,13 +19,11 @@
         <div class="form-group">
             <label for="departure_from">Wyjazd z:</label>
             <select id="departure_from" name="departure_from">
-                <!-- Populated by JS based on selected line -->
             </select>
         </div>
         <div class="form-group">
             <label for="departure_to">Przyjazd do:</label>
             <select id="departure_to" name="departure_to">
-                <!-- Populated by JS based on selected departure_from -->
             </select>
         </div>
         <div class="form-group">
@@ -35,5 +32,5 @@
         </div>
         <button type="submit">Szukaj</button>
     </form>
-    <script src="/js/connection-finder.js"></script>
+    <script src="<%= basePath || '/' %>js/connection-finder.js"></script>
 </div>
