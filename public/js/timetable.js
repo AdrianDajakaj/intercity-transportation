@@ -50,17 +50,24 @@ document.addEventListener('DOMContentLoaded', function() {
     bookBtn.addEventListener('click', async function() {
       if (selectedTileIdx === null) return;
       const tile = tiles[selectedTileIdx];
-      // Debug: log departures and selected index
-      console.log('window.departures:', window.departures);
-      console.log('selectedTileIdx:', selectedTileIdx);
       const dep = window.departures && window.departures[selectedTileIdx];
       if (!dep) return alert('Nie można pobrać danych połączenia.');
+      // Get selected discount from UI (if present)
+      let selectedDiscountId = null;
+      const discountSelect = document.getElementById('discount-select');
+      if (discountSelect) {
+        selectedDiscountId = discountSelect.value || null;
+        if (selectedDiscountId === '' || selectedDiscountId === 'null' || selectedDiscountId === '0') selectedDiscountId = null;
+      } else if (typeof dep.discount_id !== 'undefined') {
+        // fallback: use discount_id from departures only if set by user, not pre-discounted
+        selectedDiscountId = dep.discount_id || null;
+      }
       // Prepare booking payload
       const payload = {
         trip_id: dep.trip_id,
         start_line_stop_id: dep.start_line_stop_id,
         end_line_stop_id: dep.end_line_stop_id,
-        discount_id: dep.discount_id,
+        discount_id: selectedDiscountId,
         // seat_number and deck will be assigned by backend if not provided
       };
       // Debug: log payload

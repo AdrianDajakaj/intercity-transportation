@@ -17,6 +17,7 @@
             </div>
             <div class="navbar-right">
                 <% if (passenger) { %>
+                  <a href="/reservations">Moje rezerwacje</a>
                   <span class="navbar-greeting">Hello, <%= passenger.name %>!</span>
                   <a href="#" id="logout-link">Log out</a>
                 <% } else { %>

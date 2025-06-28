@@ -10,7 +10,8 @@ const Booking = {
       end_line_stop_id INT NOT NULL,
       seat_number INT NOT NULL,
       deck ENUM('upper','lower') NOT NULL,
-      discount_id INT NOT NULL DEFAULT 1,
+      discount_id INT DEFAULT NULL,
+      base_price DECIMAL(8,2) DEFAULT NULL,
       status ENUM('reserved', 'cancelled', 'completed') NOT NULL DEFAULT 'reserved',
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (passenger_id) REFERENCES passenger(passenger_id),
@@ -24,7 +25,13 @@ const Booking = {
   },
 
   create: async (booking) => {
-    const sql = `INSERT INTO booking (passenger_id, trip_id, start_line_stop_id, end_line_stop_id, seat_number, deck, discount_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    // Ensure discount_id is null if not provided or empty
+    let discountId = (booking.discount_id === undefined || booking.discount_id === null || booking.discount_id === '') ? null : booking.discount_id;
+    // Ensure base_price is always provided
+    if (booking.base_price === undefined || booking.base_price === null) {
+      throw new Error('base_price must be provided when creating a booking');
+    }
+    const sql = `INSERT INTO booking (passenger_id, trip_id, start_line_stop_id, end_line_stop_id, seat_number, deck, discount_id, base_price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const [result] = await db.query(sql, [
       booking.passenger_id,
       booking.trip_id,
@@ -32,10 +39,11 @@ const Booking = {
       booking.end_line_stop_id,
       booking.seat_number,
       booking.deck,
-      booking.discount_id || 1,
+      discountId,
+      booking.base_price,
       booking.status || 'reserved'
     ]);
-    return { booking_id: result.insertId, ...booking };
+    return { booking_id: result.insertId, ...booking, discount_id: discountId };
   },
 
   getAll: async () => {
@@ -101,7 +109,58 @@ const Booking = {
     const sql = `SELECT * FROM booking WHERE trip_id = ?`;
     const [rows] = await db.query(sql, [trip_id]);
     return rows;
-  }
+  },
+
+  // Get reservation card data for a single booking (for PDF)
+  getReservationCardData: async (db, booking_id) => {
+    const sql = `
+      SELECT 
+        b.booking_id,
+        b.trip_id,
+        b.seat_number,
+        b.deck,
+        b.status,
+        b.created_at,
+        t.trip_date,
+        l.line_name,
+        start_stop.stop_name AS start_stop_name,
+        end_stop.stop_name AS end_stop_name,
+        start_tt.departure_time AS start_departure_time,
+        end_tt.departure_time AS end_departure_time,
+        d.discount_code,
+        d.discount_description,
+        d.percent_off,
+        b.base_price
+      FROM booking b
+      JOIN trip t ON b.trip_id = t.trip_id
+      JOIN line l ON t.line_id = l.line_id
+      JOIN line_stop start_ls ON b.start_line_stop_id = start_ls.line_stop_id
+      JOIN bus_stop start_stop ON start_ls.stop_id = start_stop.stop_id
+      JOIN line_stop end_ls ON b.end_line_stop_id = end_ls.line_stop_id
+      JOIN bus_stop end_stop ON end_ls.stop_id = end_stop.stop_id
+      LEFT JOIN discount d ON b.discount_id = d.discount_id
+      LEFT JOIN timetable start_tt ON start_tt.line_stop_id = start_ls.line_stop_id AND start_tt.run_number = t.run_number
+      LEFT JOIN timetable end_tt ON end_tt.line_stop_id = end_ls.line_stop_id AND end_tt.run_number = t.run_number
+      WHERE b.booking_id = ?
+      LIMIT 1
+    `;
+    const [rows] = await db.query(sql, [booking_id]);
+    if (!rows[0]) return null;
+    const reservation = rows[0];
+    // Format and calculate as in /reservations
+    if (reservation.trip_date instanceof Date) {
+      reservation.trip_date = reservation.trip_date.toISOString().split('T')[0];
+    }
+    if (reservation.base_price) {
+      const discount = reservation.percent_off || 0;
+      const discountAmount = (reservation.base_price * discount) / 100;
+      reservation.final_price = reservation.base_price - discountAmount;
+    } else {
+      reservation.final_price = 0;
+    }
+    reservation.color_hex = '#003366';
+    return reservation;
+  },
 };
 
 module.exports = Booking;

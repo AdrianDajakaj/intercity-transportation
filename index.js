@@ -158,6 +158,88 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
 // New all-lines schedule page
 app.get(BASE_PATH + 'line-schedules', lineScheduleController.showAllLineSchedules);
 
+// Reservations page - show all bookings for logged-in user
+app.get(BASE_PATH + 'reservations', async (req, res) => {
+  if (!req.session.passenger || !req.session.passenger.passenger_id) {
+    return res.redirect(BASE_PATH + 'login');
+  }
+
+  try {
+    const passengerId = req.session.passenger.passenger_id;
+    if (!passengerId) {
+      throw new Error('Brak passenger_id w sesji.');
+    }
+
+    // Get detailed reservations for the logged-in passenger
+    const sql = `
+      SELECT 
+        b.booking_id,
+        b.trip_id,
+        b.seat_number,
+        b.deck,
+        b.status,
+        b.created_at,
+        t.trip_date,
+        l.line_name,
+        start_stop.stop_name AS start_stop_name,
+        end_stop.stop_name AS end_stop_name,
+        start_stop.is_hub AS start_is_hub,
+        end_stop.is_hub AS end_is_hub,
+        start_tt.departure_time AS start_departure_time,
+        end_tt.departure_time AS end_departure_time,
+        d.discount_code,
+        d.discount_description,
+        d.percent_off,
+        b.base_price
+      FROM booking b
+      JOIN trip t ON b.trip_id = t.trip_id
+      JOIN line l ON t.line_id = l.line_id
+      JOIN line_stop start_ls ON b.start_line_stop_id = start_ls.line_stop_id
+      JOIN bus_stop start_stop ON start_ls.stop_id = start_stop.stop_id
+      JOIN line_stop end_ls ON b.end_line_stop_id = end_ls.line_stop_id
+      JOIN bus_stop end_stop ON end_ls.stop_id = end_stop.stop_id
+      LEFT JOIN discount d ON b.discount_id = d.discount_id
+      LEFT JOIN fare f ON (
+        f.line_id = l.line_id AND
+        f.start_line_stop_id = b.start_line_stop_id AND
+        f.end_line_stop_id = b.end_line_stop_id
+      )
+      LEFT JOIN timetable start_tt ON start_tt.line_stop_id = start_ls.line_stop_id AND start_tt.run_number = t.run_number
+      LEFT JOIN timetable end_tt ON end_tt.line_stop_id = end_ls.line_stop_id AND end_tt.run_number = t.run_number
+      WHERE b.passenger_id = ?
+      ORDER BY t.trip_date DESC
+    `;
+
+    const [reservations] = await db.query(sql, [passengerId]);
+
+    reservations.forEach(reservation => {
+      if (reservation.trip_date instanceof Date) {
+        reservation.trip_date = reservation.trip_date.toISOString().split('T')[0];
+      }
+      if (reservation.base_price) {
+        const discount = reservation.percent_off || 0;
+        const discountAmount = (reservation.base_price * discount) / 100;
+        reservation.final_price = reservation.base_price - discountAmount;
+      } else {
+        reservation.final_price = 0;
+      }
+      reservation.color_hex = '#003366';
+    });
+
+    res.render('reservations', { 
+      reservations, 
+      passenger: req.session.passenger 
+    });
+  } catch (error) {
+    console.error('Error fetching reservations:', error);
+    res.render('reservations', { 
+      reservations: [], 
+      passenger: req.session.passenger,
+      error: 'Wystąpił błąd podczas pobierania rezerwacji. Szczegóły: ' + error.message
+    });
+  }
+});
+
 // Ensure address, passenger, bus, bus_stop, line, line_stop, timetable, trip, discount, fare, and booking tables exist on startup
 (async () => {
   try {

@@ -5,6 +5,8 @@ const path = require('path');
 const db = require('../config/db');
 const tripModel = require('../models/tripModel');
 const busModel = require('../models/busModel');
+const fareModel = require('../models/fareModel');
+const discountModel = require('../models/discountModel');
 
 exports.create = async (req, res) => {
   try {
@@ -60,6 +62,21 @@ exports.create = async (req, res) => {
     const chosen = available[Math.floor(Math.random() * available.length)];
     // Debug: log chosen seat/deck
     console.log('CHOSEN SEAT/DECK:', chosen);
+    // Calculate base price
+    const fareResult = await fareModel.getTotalPrice(trip.line_id, start_line_stop_id, end_line_stop_id);
+    if (!fareResult || fareResult.total_price == null) {
+      return res.status(400).json({ error: 'Could not calculate fare for this route' });
+    }
+    let base_price = fareResult.total_price;
+    let appliedDiscountId = null;
+    if (discount_id !== undefined && discount_id !== null && discount_id !== '' && discount_id !== 'null' && discount_id !== 0 && discount_id !== '0') {
+      // Check if discount exists
+      const discount = await discountModel.getById(db, discount_id);
+      if (discount && discount.percent_off > 0) {
+        base_price = Number((base_price * (1 - discount.percent_off / 100)).toFixed(2));
+        appliedDiscountId = discount.discount_id;
+      }
+    }
     // Create booking
     const booking = await Booking.create({
       passenger_id,
@@ -68,7 +85,8 @@ exports.create = async (req, res) => {
       end_line_stop_id,
       seat_number: chosen.seat,
       deck: chosen.deck,
-      discount_id: discount_id || 1,
+      discount_id: appliedDiscountId,
+      base_price,
       status: 'reserved'
     });
     res.status(201).json(booking);
@@ -178,48 +196,97 @@ exports.getAllForTrip = async (req, res) => {
 exports.downloadTicket = async (req, res) => {
   const bookingId = req.params.id;
   try {
-    // 1. Get booking, passenger, trip, fare, discount info
-    const booking = await require('../models/bookingModel').getById(bookingId);
-    if (!booking) return res.status(404).json({ error: 'Booking not found' });
-    const passenger = await require('../models/passengerModel').getById(booking.passenger_id);
-    const trip = await require('../models/tripModel').getById(booking.trip_id);
-    const line = await require('../models/lineModel').getById(trip.line_id);
-    const startLineStop = await require('../models/lineStopModel').getById(booking.start_line_stop_id);
-    const endLineStop = await require('../models/lineStopModel').getById(booking.end_line_stop_id);
-    const startBusStop = await require('../models/busStopModel').getById(startLineStop.bus_stop_id);
-    const endBusStop = await require('../models/busStopModel').getById(endLineStop.bus_stop_id);
-    const discount = booking.discount_id ? await require('../models/discountModel').getById(booking.discount_id) : null;
-    // Get total price (with discount)
-    const fareResult = await require('../models/fareModel').getTotalPrice(line.line_id, booking.start_line_stop_id, booking.end_line_stop_id);
-    let price = fareResult.total_price;
-    let discountInfo = 'BRAK';
-    if (discount) {
-      price = price * (1 - discount.percentage / 100);
-      discountInfo = discount.discount_type;
+    // Pobierz dane rezerwacji dokładnie jak do /reservations
+    const reservation = await Booking.getReservationCardData(db, bookingId);
+    if (!reservation) return res.status(404).json({ error: 'Booking not found' });
+    // Przygotuj PDF na podstawie tych danych
+    const PDFDocument = require('pdfkit');
+    const fs = require('fs');
+    const path = require('path');
+    // Ensure tmp directory exists
+    const tmpDir = path.join(__dirname, '../../tmp');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
     }
-    // 2. Generate PDF
+    const tempPath = path.join(tmpDir, `ticket_${bookingId}_${Date.now()}.pdf`);
     const doc = new PDFDocument();
-    const tempPath = path.join(__dirname, `../../tmp/ticket_${bookingId}_${Date.now()}.pdf`);
-    doc.pipe(fs.createWriteStream(tempPath));
+    const fileStream = fs.createWriteStream(tempPath);
+    doc.pipe(fileStream);
+    // Ustaw czcionkę z polskimi znakami
+    const fontPath = path.join(__dirname, '../public/fonts/DejaVuSans.ttf');
+    if (fs.existsSync(fontPath)) {
+      doc.font(fontPath);
+    } else {
+      console.warn('Brak pliku czcionki DejaVuSans.ttf w public/fonts! PDF będzie bez polskich znaków.');
+    }
     doc.fontSize(18).text('Bilet Intercity', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(12).text(`Imię i nazwisko: ${passenger.first_name} ${passenger.last_name}`);
-    doc.text(`Przystanek początkowy: ${startBusStop.stop_name}`);
-    doc.text(`Przystanek końcowy: ${endBusStop.stop_name}`);
-    doc.text(`Data odjazdu: ${trip.departure_date}`);
-    doc.text(`Godzina odjazdu: ${trip.departure_time}`);
-    doc.text(`Cena: ${price.toFixed(2)} PLN`);
-    doc.text(`Zniżka: ${discount ? discount.percentage + '%' : 'Brak'}`);
-    doc.text(`Typ zniżki: ${discountInfo}`);
+    doc.fontSize(12);
+    doc.text(`Linia: ${reservation.line_name}`);
+    // Data przejazdu
+    let tripDate = reservation.trip_date;
+    if (tripDate && tripDate.length === 10 && tripDate.includes('-')) {
+      const d = tripDate.split('-');
+      tripDate = d[2] + '.' + d[1] + '.' + d[0];
+    }
+    doc.text(`Data przejazdu: ${tripDate || '-'}`);
+    doc.moveDown(0.5);
+    // Trasa
+    doc.text(`Przystanek początkowy: ${reservation.start_stop_name}`);
+    doc.text(`Godzina odjazdu: ${reservation.start_departure_time || '-'}`);
+    doc.text(`Przystanek końcowy: ${reservation.end_stop_name}`);
+    doc.text(`Godzina przyjazdu: ${reservation.end_departure_time || '-'}`);
+    doc.moveDown(0.5);
+    // Szczegóły
+    doc.text(`Miejsce: ${reservation.seat_number} (${reservation.deck === 'upper' ? 'górny pokład' : 'dolny pokład'})`);
+    // Zniżka
+    let znizka = 'Brak';
+    if (reservation.discount_code) {
+      znizka = reservation.discount_description || reservation.discount_code;
+      if (reservation.percent_off > 0) znizka += ` (-${reservation.percent_off}%)`;
+    }
+    doc.text(`Zniżka: ${znizka}`);
+    // Cena
+    if (reservation.final_price > 0) {
+      doc.text(`Cena: ${reservation.final_price.toFixed(2)} zł`);
+      if (reservation.percent_off > 0 && !isNaN(parseFloat(reservation.base_price))) {
+        doc.text(`Cena przed zniżką: ${parseFloat(reservation.base_price).toFixed(2)} zł`);
+      }
+    } else {
+      doc.text('Cena: Nie ustalono');
+    }
+    // Data rezerwacji
+    let created = '-';
+    if (reservation.created_at) {
+      try {
+        const dt = new Date(reservation.created_at);
+        created = dt.toLocaleDateString('pl-PL') + ' ' + dt.toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit'});
+      } catch {}
+    }
+    doc.text(`Zarezerwowano: ${created}`);
+    doc.text(`Numer rezerwacji: ${reservation.booking_id}`);
+    console.log('PDF: przed doc.end()');
     doc.end();
-    // 3. Wait for PDF to finish, then send as download
-    doc.on('finish', () => {
+    fileStream.on('finish', () => {
+      console.log('PDF: fileStream finish');
       res.download(tempPath, `bilet_${bookingId}.pdf`, err => {
         fs.unlink(tempPath, () => {}); // Delete temp file after sending
-        if (err) res.status(500).json({ error: 'File download error' });
+        if (err) {
+          console.error('File download error:', err);
+          if (!res.headersSent) res.status(500).json({ error: 'File download error' });
+        }
       });
     });
+    fileStream.on('error', (err) => {
+      console.error('PDF fileStream error:', err);
+      if (!res.headersSent) res.status(500).json({ error: 'PDF fileStream error' });
+    });
+    doc.on('error', (err) => {
+      console.error('PDF generation error:', err);
+      if (!res.headersSent) res.status(500).json({ error: 'PDF generation error' });
+    });
   } catch (err) {
+    console.error('DOWNLOAD TICKET ERROR:', err);
     res.status(500).json({ error: err.message });
   }
 };

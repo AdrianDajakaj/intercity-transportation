@@ -1,0 +1,350 @@
+<div class="container">
+  <h2 class="page-title">Moje rezerwacje</h2>
+  
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="error-message" role="alert">
+      <%= error %>
+    </div>
+  <% } %>
+  
+  <% if (reservations.length === 0) { %>
+    <div class="no-reservations">
+      <img src="/img/empty-box.svg" alt="Brak rezerwacji" style="width:80px;opacity:0.5;margin-bottom:1rem;"/>
+      <p>Nie masz jeszcze żadnych rezerwacji.</p>
+      <p><a href="/timetable" class="btn btn-primary">Zarezerwuj pierwszy kurs</a></p>
+    </div>
+  <% } else { %>
+    <div class="reservations-list">
+      <% reservations.forEach(function(reservation) { %>
+        <div class="reservation-card" tabindex="0" aria-label="Szczegóły rezerwacji">
+          <div class="reservation-header">
+            <div class="line-info">
+              <span class="line-name" style="background-color:<%= reservation.color_hex ? reservation.color_hex : '#003366' %>;">
+                <%= reservation.line_name %>
+              </span>
+              <span class="trip-date"><i class="fa fa-calendar"></i>
+                <% if (reservation.trip_date) { 
+                  let d = ('' + reservation.trip_date).split('T')[0].split('-');
+                  if (d.length === 3) { %>
+                    <%= d[2] + '.' + d[1] + '.' + d[0] %>
+                  <% } else { %>
+                    <%= reservation.trip_date %>
+                  <% } 
+                } else { %>
+                  Brak daty
+                <% } %>
+              </span>
+            </div>
+            <div class="reservation-status status-<%= reservation.status %>">
+              <%= reservation.status === 'reserved' ? 'Zarezerwowane' : 
+                  reservation.status === 'cancelled' ? 'Anulowane' : 
+                  'Zakończone' %>
+            </div>
+          </div>
+          
+          <div class="route-info">
+            <div class="route-segment">
+              <div class="stop-info">
+                <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.start_stop_name %></div>
+                <div class="stop-city"><%= reservation.start_city %></div>
+                <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.start_departure_time || '-' %></div>
+              </div>
+            </div>
+            <div class="route-arrow" aria-hidden="true">→</div>
+            <div class="route-segment">
+              <div class="stop-info">
+                <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.end_stop_name %></div>
+                <div class="stop-city"><%= reservation.end_city %></div>
+                <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.end_departure_time || '-' %></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="reservation-details">
+            <div class="detail-item">
+              <span class="detail-label">Miejsce:</span>
+              <span class="detail-value">
+                <%= reservation.seat_number %> 
+                (<%= reservation.deck === 'upper' ? 'górny pokład' : 'dolny pokład' %>)
+              </span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">Zniżka:</span>
+              <span class="detail-value">
+                <% if (reservation.discount_code) { %>
+                  <%= reservation.discount_description || reservation.discount_code %>
+                  <% if (reservation.percent_off > 0) { %>
+                    (-<%= reservation.percent_off %>%)
+                  <% } %>
+                <% } else { %>
+                  Brak
+                <% } %>
+              </span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">Cena:</span>
+              <span class="detail-value price">
+                <% if (reservation.final_price > 0) { %>
+                  <%= reservation.final_price.toFixed(2) %> zł
+                  <% if (reservation.percent_off > 0 && !isNaN(parseFloat(reservation.base_price))) { %>
+                    <span class="original-price">(<%= parseFloat(reservation.base_price).toFixed(2) %> zł)</span>
+                  <% } %>
+                <% } else { %>
+                  <span style="color:#c62828;font-weight:bold">Nie ustalono</span>
+                  <% if (!reservation.base_price) { %>
+                    <span style="color:#888;font-size:0.9em">(Brak danych taryfy w bazie)</span>
+                  <% } %>
+                <% } %>
+              </span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">Zarezerwowano:</span>
+              <span class="detail-value">
+                <%= new Date(reservation.created_at).toLocaleDateString('pl-PL') %> 
+                <%= new Date(reservation.created_at).toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit'}) %>
+              </span>
+            </div>
+          </div>
+          
+          <div class="reservation-id">
+            Rezerwacja #<%= reservation.booking_id %>
+            <a href="/api/bookings/<%= reservation.booking_id %>/ticket" class="btn btn-secondary" style="margin-left:1rem;" download>Pobierz PDF</a>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</div>
+
+<!-- Font Awesome for icons (optional, can be replaced with SVGs or removed) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<style>
+.page-title {
+  margin-bottom: 2rem;
+  color: #003366;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Reservations-specific styles */
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ffcdd2;
+}
+
+.no-reservations {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #666;
+}
+
+.no-reservations p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.no-reservations a {
+  color: #0056b3;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.no-reservations a:hover {
+  text-decoration: underline;
+}
+
+.reservations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.reservation-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s;
+}
+
+.reservation-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+
+.reservation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.line-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.line-name {
+  color: #fff;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+.trip-date {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.reservation-status {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-reserved {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status-cancelled {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.status-completed {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.route-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.route-segment {
+  flex: 1;
+}
+
+.stop-info {
+  text-align: center;
+}
+
+.stop-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 0.2rem;
+}
+
+.stop-city {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.stop-time {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #0056b3;
+}
+
+.route-arrow {
+  font-size: 1.5rem;
+  color: #0056b3;
+  font-weight: bold;
+  margin: 0 1rem;
+}
+
+.reservation-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: #333;
+}
+
+.detail-value.price {
+  font-weight: bold;
+  color: #0056b3;
+  font-size: 1.1rem;
+}
+
+.original-price {
+  font-size: 0.9rem;
+  color: #999;
+  text-decoration: line-through;
+  font-weight: normal;
+}
+
+.reservation-id {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+@media (max-width: 768px) {
+  .reservation-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .route-info {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .route-arrow {
+    transform: rotate(90deg);
+  }
+  
+  .reservation-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .reservation-id {
+    text-align: left;
+  }
+}
+</style>
