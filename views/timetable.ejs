@@ -3,6 +3,7 @@
   <% if (departures.length === 0) { %>
     <div class="no-trips">Brak kursów na wybrany dzień dla tej trasy.</div>
   <% } else { %>
+    <script type="application/json" id="departures-data"><%- JSON.stringify(departures).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026') %></script>
     <div class="departure-tiles">
       <% departures.forEach(function(dep, idx) { %>
         <div class="departure-tile" data-idx="<%= idx %>">

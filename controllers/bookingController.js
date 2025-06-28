@@ -2,12 +2,79 @@ const Booking = require('../models/bookingModel');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const db = require('../config/db');
+const tripModel = require('../models/tripModel');
+const busModel = require('../models/busModel');
 
 exports.create = async (req, res) => {
   try {
-    const booking = await Booking.create(req.body);
+    // Debug: log session and body
+    console.log('SESSION:', req.session);
+    console.log('BOOKING BODY:', req.body);
+    // Get passenger_id from session
+    const passenger = req.session.passenger;
+    if (!passenger || !passenger.passenger_id) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    const passenger_id = passenger.passenger_id;
+    const { trip_id, start_line_stop_id, end_line_stop_id, discount_id } = req.body;
+    if (!trip_id || !start_line_stop_id || !end_line_stop_id) {
+      return res.status(400).json({ error: 'Missing booking data' });
+    }
+    // Get trip and bus info
+    const trip = await tripModel.getById(db, trip_id);
+    if (!trip) return res.status(400).json({ error: 'Trip not found' });
+    const bus = await busModel.getById(db, trip.bus_id);
+    if (!bus) return res.status(400).json({ error: 'Bus not found' });
+    // Get all bookings for this trip
+    const allBookings = await Booking.getAllForTrip(trip_id);
+    // Build seat map
+    const seatsUpper = bus.seats_upper || 0;
+    const seatsLower = bus.seats_lower || 0;
+    const taken = { upper: new Set(), lower: new Set() };
+    allBookings.forEach(b => {
+      // Check for overlap in segment
+      if (
+        (b.start_line_stop_id <= end_line_stop_id && b.end_line_stop_id > start_line_stop_id) ||
+        (b.start_line_stop_id < end_line_stop_id && b.end_line_stop_id >= start_line_stop_id)
+      ) {
+        taken[b.deck].add(b.seat_number);
+      }
+    });
+    // Find available seats
+    let available = [];
+    if (seatsUpper > 0) {
+      for (let i = 1; i <= seatsUpper; i++) {
+        if (!taken.upper.has(i)) available.push({ seat: i, deck: 'upper' });
+      }
+    }
+    if (seatsLower > 0) {
+      for (let i = 1; i <= seatsLower; i++) {
+        if (!taken.lower.has(i)) available.push({ seat: i, deck: 'lower' });
+      }
+    }
+    if (available.length === 0) {
+      return res.status(409).json({ error: 'No available seats' });
+    }
+    // Pick random seat
+    const chosen = available[Math.floor(Math.random() * available.length)];
+    // Debug: log chosen seat/deck
+    console.log('CHOSEN SEAT/DECK:', chosen);
+    // Create booking
+    const booking = await Booking.create({
+      passenger_id,
+      trip_id,
+      start_line_stop_id,
+      end_line_stop_id,
+      seat_number: chosen.seat,
+      deck: chosen.deck,
+      discount_id: discount_id || 1,
+      status: 'reserved'
+    });
     res.status(201).json(booking);
   } catch (err) {
+    // Debug: log error
+    console.error('BOOKING ERROR:', err);
     res.status(400).json({ error: err.message });
   }
 };

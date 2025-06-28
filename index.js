@@ -70,17 +70,27 @@ app.get(BASE_PATH + 'register', (req, res) => {
 
 // Timetable search result page
 app.get(BASE_PATH + 'timetable', async (req, res) => {
+  console.log('=== TIMETABLE ROUTE HIT ===');
+  // Debug: log query params
+  console.log('TIMETABLE QUERY:', req.query);
   // Parse query params from connection-finder
   const { line_code_direction, departure_from, departure_to, departure_date, ticket_type } = req.query;
   if (!line_code_direction || !departure_from || !departure_to || !departure_date) {
+    console.log('Missing required query params');
     return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
   }
+  
+  try {
   // Parse line_code and direction
   const [line_code, direction] = line_code_direction.split('_');
   // Find line by code and direction
   const lines = await lineModel.getAll(db);
   const line = lines.find(l => l.line_code === line_code && String(l.direction) === direction);
-  if (!line) return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+  console.log('Found line:', line);
+  if (!line) {
+    console.log('Line not found');
+    return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+  }
   // Find all trips for this line and date
   const trips = await tripModel.getAll(db);
   const tripsForDay = trips.filter(trip => {
@@ -89,6 +99,7 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
       : String(trip.trip_date);
     return trip.line_id === line.line_id && tripDateStr === departure_date;
   });
+  console.log('Trips for day:', tripsForDay);
   // Calculate price (with or without discount)
   let price = null;
   if (tripsForDay.length > 0) {
@@ -112,19 +123,36 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
   for (const trip of tripsForDay) {
     // Get all stops for this trip (ordered)
     const stops = await tripModel.getTripStops(db, trip.trip_id);
+    console.log('Trip', trip.trip_id, 'stops:', stops);
     const depIdx = stops.findIndex(s => String(s.line_stop_id) === String(departure_from));
     const arrIdx = stops.findIndex(s => String(s.line_stop_id) === String(departure_to));
-    if (depIdx === -1 || arrIdx === -1 || arrIdx <= depIdx) continue;
+    console.log('depIdx:', depIdx, 'arrIdx:', arrIdx);
+    if (depIdx === -1 || arrIdx === -1 || arrIdx <= depIdx) {
+      console.log('Skipping trip', trip.trip_id, 'because stops not found or arrIdx <= depIdx');
+      continue;
+    }
     departures.push({
       trip_id: trip.trip_id,
       departure_time: stops[depIdx].departure_time,
       departure_stop: stops[depIdx].stop_name,
       arrival_time: stops[arrIdx].departure_time,
       arrival_stop: stops[arrIdx].stop_name,
-      price
+      price,
+      start_line_stop_id: stops[depIdx].line_stop_id,
+      end_line_stop_id: stops[arrIdx].line_stop_id,
+      discount_id: ticket_type === 'ulgowy' ? 1 : 0
     });
   }
+  if (departures.length === 0) {
+    console.log('No departures found for these params');
+  }
+  console.log('DEPARTURES SENT TO EJS:', departures);
   res.render('timetable', { departures, passenger: req.session.passenger || null });
+  
+  } catch (error) {
+    console.error('Error in timetable route:', error);
+    res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+  }
 });
 
 // New all-lines schedule page
