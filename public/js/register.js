@@ -18,8 +18,7 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await res.json();
     if (res.ok && data.passenger_id) {
-      const basePath = window.BASE_PATH || '/';
-      window.location.href = basePath + 'login';
+      window.location.href = '/login';
     } else {
       errorDiv.textContent = data.error || 'Registration failed';
       errorDiv.classList.remove('d-none');

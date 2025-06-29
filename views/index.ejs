@@ -3,7 +3,7 @@
         
       <h1 class="greeting">Witaj, <%= passenger.name %> <%= passenger.surname %>!</h1>
     <% } %>
-    <form id="connection-finder" method="GET" action="<%= basePath || '/' %>timetable">
+    <form id="connection-finder" method="GET" action="timetable">
         <div class="ticket-type">
             <label><input type="radio" name="ticket_type" value="normalny" checked> Bilet normalny</label>
             <label><input type="radio" name="ticket_type" value="ulgowy"> Bilet ulgowy</label>
@@ -32,5 +32,5 @@
         </div>
         <button type="submit">Szukaj</button>
     </form>
-    <script src="<%= basePath || '/' %>js/connection-finder.js"></script>
+    <script src="js/connection-finder.js"></script>
 </div>

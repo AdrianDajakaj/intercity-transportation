@@ -7,65 +7,60 @@ const addressModel = require('./models/addressModel');
 const passengerModel = require('./models/passengerModel');
 const busModel = require('./models/busModel');
 const busStopModel = require('./models/busStopModel');
-const lineModel = require('./models/lineModel'); // ✅ dodaj to
-const lineStopModel = require('./models/lineStopModel'); // Ensure lineStopModel is required
+const lineModel = require('./models/lineModel');
+const lineStopModel = require('./models/lineStopModel');
 const timetableModel = require('./models/timetableModel');
-const tripModel = require('./models/tripModel'); // Ensure tripModel is required
-const discountModel = require('./models/discountModel'); // Ensure discountModel is required
-const fareModel = require('./models/fareModel'); // Ensure fareModel is required
-const bookingModel = require('./models/bookingModel'); // Ensure bookingModel is required
+const tripModel = require('./models/tripModel'); 
+const discountModel = require('./models/discountModel'); 
+const fareModel = require('./models/fareModel'); 
+const bookingModel = require('./models/bookingModel'); 
 const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
 const lineScheduleController = require('./controllers/lineScheduleController');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BASE_PATH = process.env.BASE_PATH || '/';
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-if (BASE_PATH === '/') {
-  app.use(express.static(path.join(__dirname, 'public')));
-} else {
-  app.use(BASE_PATH, express.static(path.join(__dirname, 'public')));
-}
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true if using HTTPS
+  cookie: { secure: false } 
 }));
 
 app.use((req, res, next) => {
   res.locals.passenger = req.session.passenger || null;
-  res.locals.basePath = BASE_PATH.endsWith('/') ? BASE_PATH : BASE_PATH + '/';
+  res.locals.basePath = '/';
   next();
 });
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(expressLayouts); // ✅ dodaj to
+app.use(expressLayouts); 
 app.set('layout', 'layouts/main');
 
-app.use(BASE_PATH + 'api', apiRouter);
+app.use('/api', apiRouter);
 
-app.get(BASE_PATH, async (req, res) => {
+app.get('/', async (req, res) => {
   const lines = await lineModel.getAll(db);
-  res.render('index', { basePath: BASE_PATH, lines });
+  res.render('index', { basePath: '/', lines });
 });
 
-app.get(BASE_PATH + 'login', (req, res) => {
+app.get('/login', (req, res) => {
   res.render('login', { title: 'Login' });
 });
 
-app.get(BASE_PATH + 'register', (req, res) => {
+app.get('/register', (req, res) => {
   res.render('register', { title: 'Register' });
 });
 
-app.get(BASE_PATH + 'timetable', async (req, res) => {
+app.get('/timetable', async (req, res) => {
   console.log('=== TIMETABLE ROUTE HIT ===');
   console.log('TIMETABLE QUERY:', req.query);
   const { line_code_direction, departure_from, departure_to, departure_date, ticket_type } = req.query;
@@ -143,11 +138,11 @@ app.get(BASE_PATH + 'timetable', async (req, res) => {
   }
 });
 
-app.get(BASE_PATH + 'line-schedules', lineScheduleController.showAllLineSchedules);
+app.get('/line-schedules', lineScheduleController.showAllLineSchedules);
 
-app.get(BASE_PATH + 'reservations', async (req, res) => {
+app.get('/reservations', async (req, res) => {
   if (!req.session.passenger || !req.session.passenger.passenger_id) {
-    return res.redirect(BASE_PATH + 'login');
+    return res.redirect('/login');
   }
 
   try {
@@ -307,7 +302,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
       console.log('Addresses inserted into address table.');
     }
 
-    // Insert bus stops if table is empty
     const [busStopRows] = await db.query('SELECT COUNT(*) as count FROM bus_stop');
     if (busStopRows[0].count === 0) {
       const busStops = [
@@ -376,7 +370,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
       console.log('Bus stops inserted into bus_stop table.');
     }
 
-    // Insert buses if table is empty
     const [busRows] = await db.query('SELECT COUNT(*) as count FROM bus');
     if (busRows[0].count === 0) {
       const buses = [
@@ -409,7 +402,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
       console.log('Buses inserted into bus table.');
     }
 
-    // Insert lines if table is empty
     const [lineRows] = await db.query('SELECT COUNT(*) as count FROM line');
     if (lineRows[0].count === 0) {
       const lines = [
@@ -425,7 +417,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
       console.log('Lines inserted into line table.');
     }
 
-    // Insert line stops if table is empty
     const [lineStopRows] = await db.query('SELECT COUNT(*) as count FROM line_stop');
     if (lineStopRows[0].count === 0) {
       const lineStops1 = [
@@ -509,7 +500,6 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
       console.log('Line stops inserted into line_stop table.');
     }
 
-    // Insert timetables if table is empty
     const [timetableRows] = await db.query('SELECT COUNT(*) as count FROM timetable');
     if (timetableRows[0].count === 0) {
       const timetables = [
@@ -839,7 +829,7 @@ app.get(BASE_PATH + 'reservations', async (req, res) => {
     }
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}, base path: ${BASE_PATH}`);
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (err) {
     console.error('Failed to initialize database:', err);

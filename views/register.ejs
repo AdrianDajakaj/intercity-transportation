@@ -1,6 +1,6 @@
 <div class="container mt-5" style="max-width: 400px;">
   <h2 class="mb-4 text-center">Rejestracja</h2>
-  <form id="register-form" method="POST" action="<%= basePath || '/' %>register">
+  <form id="register-form" method="POST" action="register">
     <div class="mb-3">
       <label for="passenger_name" class="form-label">Imię</label>
       <input type="text" class="form-control" id="passenger_name" name="passenger_name" required>
@@ -20,9 +20,9 @@
     <button type="submit" class="btn btn-primary w-100">Zarejestruj</button>
   </form>
   <div class="mt-3 text-center">
-    <a href="<%= basePath || '/' %>login">Masz już konto? Zaloguj się</a>
+    <a href="login">Masz już konto? Zaloguj się</a>
   </div>
   <div id="register-error" class="alert alert-danger mt-3 d-none" role="alert"></div>
 </div>
 
-<script src="<%= basePath || '/' %>js/register.js"></script>
+<script src="js/register.js"></script>

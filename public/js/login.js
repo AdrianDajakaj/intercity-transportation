@@ -16,8 +16,7 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      const basePath = window.BASE_PATH || '/';
-      window.location.href = basePath;
+      window.location.href = '/';
     } else {
       errorDiv.textContent = data.error || 'Login failed';
       errorDiv.classList.remove('d-none');
