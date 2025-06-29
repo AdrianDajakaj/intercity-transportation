@@ -10,6 +10,7 @@ form.addEventListener('submit', async (e) => {
   try {
     const basePath = window.BASE_PATH || '/';
     const apiUrl = `${basePath}api/passengers/login`;
+    console.log('Attempting login to:', apiUrl);
     
     const res = await fetch(apiUrl, {
       method: 'POST',
@@ -17,7 +18,14 @@ form.addEventListener('submit', async (e) => {
       body: JSON.stringify({ email, password })
     });
     
+    console.log('Response received:', res.status, res.statusText);
+    
+    if (!res.ok) {
+      console.log('Response not OK, status:', res.status);
+    }
+    
     const data = await res.json();
+    console.log('Response data:', data);
     
     if (res.ok && data.success) {
       window.location.href = '/';
@@ -27,6 +35,8 @@ form.addEventListener('submit', async (e) => {
     }
   } catch (err) {
     console.error('Login error:', err);
+    console.error('Error type:', err.name);
+    console.error('Error message:', err.message);
     errorDiv.textContent = 'Network error: ' + (err.message || 'Connection failed');
     errorDiv.classList.remove('d-none');
   }

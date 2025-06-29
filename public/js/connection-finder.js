@@ -6,25 +6,50 @@ document.addEventListener('DOMContentLoaded', function() {
     let stopsCache = {};
 
     function parseLineCodeAndDirection(value) {
+        console.log('Parsing value:', value);
         const idx = value.lastIndexOf('_');
-        return [value.substring(0, idx), value.substring(idx + 1)];
+        const lineCode = value.substring(0, idx);
+        const direction = value.substring(idx + 1);
+        console.log('Parsed lineCode:', lineCode, 'direction:', direction);
+        return [lineCode, direction];
     }
 
     async function fetchStops(lineCode, direction) {
         const basePath = window.BASE_PATH || '/';
-        const res = await fetch(`${basePath}api/lines/${lineCode}/${direction}/stops`);
-        return await res.json();
+        const url = `${basePath}api/lines/${lineCode}/${direction}/stops`;
+        console.log('Fetching stops from:', url);
+        try {
+            const res = await fetch(url);
+            console.log('Response status:', res.status);
+            if (!res.ok) {
+                console.error('Response not OK:', res.status, res.statusText);
+                return [];
+            }
+            const data = await res.json();
+            console.log('Fetched stops:', data);
+            return data;
+        } catch (error) {
+            console.error('Error fetching stops:', error);
+            return [];
+        }
     }
 
     function populateFromStops(stops) {
+        console.log('populateFromStops called with:', stops);
         fromSelect.innerHTML = '';
+        if (!stops || stops.length === 0) {
+            console.log('No stops to populate');
+            return;
+        }
         stops.forEach(stop => {
+            console.log('Adding stop:', stop);
             const opt = document.createElement('option');
             opt.value = stop.line_stop_id;
             opt.textContent = stop.stop_name;
             opt.dataset.sequence = stop.sequence;
             fromSelect.appendChild(opt);
         });
+        console.log('Populated', stops.length, 'stops');
         fromSelect.dispatchEvent(new Event('change'));
     }
 
@@ -39,16 +64,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function updateStops() {
+        console.log('updateStops called, lineCodeSelect.value:', lineCodeSelect.value);
         const [lineCode, direction] = parseLineCodeAndDirection(lineCodeSelect.value);
         const cacheKey = `${lineCode}_${direction}`;
+        console.log('Cache key:', cacheKey);
         if (!stopsCache[cacheKey]) {
+            console.log('Cache miss, fetching stops...');
             const stops = await fetchStops(lineCode, direction);
             stopsCache[cacheKey] = stops;
+        } else {
+            console.log('Cache hit, using cached stops');
         }
+        console.log('Populating from stops with:', stopsCache[cacheKey]);
         populateFromStops(stopsCache[cacheKey]);
     }
 
-    lineCodeSelect.addEventListener('change', updateStops);
+    lineCodeSelect.addEventListener('change', function() {
+        console.log('Line selection changed to:', lineCodeSelect.value);
+        updateStops();
+    });
 
     fromSelect.addEventListener('change', function() {
         const [lineCode, direction] = parseLineCodeAndDirection(lineCodeSelect.value);
