@@ -97,18 +97,25 @@ module.exports = {
   // Login endpoint with session
   login: async (req, res) => {
     try {
+      console.log('Login attempt for:', req.body);
       const { email, password } = req.body;
       if (!email || !password) {
+        console.log('Missing email or password');
         return res.status(400).json({ error: 'Email and password are required' });
       }
+      console.log('Looking for passenger with email:', email);
       const passenger = await passengerModel.getByEmail(db, email);
       if (!passenger) {
+        console.log('Passenger not found');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
+      console.log('Passenger found, checking password');
       const match = await bcrypt.compare(password, passenger.password_hash);
       if (!match) {
+        console.log('Password mismatch');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
+      console.log('Login successful, setting session');
       // Set session
       req.session.passenger = {
         passenger_id: passenger.passenger_id,
@@ -118,6 +125,7 @@ module.exports = {
       };
       res.json({ success: true, passenger_id: passenger.passenger_id, name: passenger.passenger_name, surname: passenger.passenger_surname, email: passenger.email });
     } catch (err) {
+      console.error('Login error:', err);
       res.status(500).json({ error: 'Login failed' });
     }
   },
