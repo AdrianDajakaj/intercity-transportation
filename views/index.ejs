@@ -50,7 +50,12 @@
             }
 
             async function fetchStops(lineCode, direction) {
-                const basePath = window.BASE_PATH || '/';
+                // Auto-detect base path from current URL
+                const currentPath = window.location.pathname;
+                let basePath = '/';
+                if (currentPath.includes('/p13/')) {
+                    basePath = '/p13/';
+                }
                 const url = `${basePath}api/lines/${lineCode}/${direction}/stops`;
                 console.log('Fetching stops from:', url);
                 try {
