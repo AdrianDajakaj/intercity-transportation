@@ -9,12 +9,28 @@ form.addEventListener('submit', async (e) => {
 
   try {
     const basePath = window.BASE_PATH || '/';
+<<<<<<< HEAD
     const res = await fetch(`api/passengers/login`, {
+=======
+    const apiUrl = `${basePath}api/passengers/login`;
+    console.log('Attempting login to:', apiUrl);
+    
+    const res = await fetch(apiUrl, {
+>>>>>>> 99e313cc1f53ab057b3e01366cfbb7c40ff47034
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
+    
+    console.log('Response received:', res.status, res.statusText);
+    
+    if (!res.ok) {
+      console.log('Response not OK, status:', res.status);
+    }
+    
     const data = await res.json();
+    console.log('Response data:', data);
+    
     if (res.ok && data.success) {
       window.location.href = '/';
     } else {
@@ -22,7 +38,10 @@ form.addEventListener('submit', async (e) => {
       errorDiv.classList.remove('d-none');
     }
   } catch (err) {
-    errorDiv.textContent = 'Network error';
+    console.error('Login error:', err);
+    console.error('Error type:', err.name);
+    console.error('Error message:', err.message);
+    errorDiv.textContent = 'Network error: ' + (err.message || 'Connection failed');
     errorDiv.classList.remove('d-none');
   }
 });

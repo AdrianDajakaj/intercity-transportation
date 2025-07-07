@@ -20,11 +20,15 @@ const lineScheduleController = require('./controllers/lineScheduleController');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BASE_PATH = process.env.BASE_PATH || '/';
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+  etag: false
+}));
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecret',
@@ -35,7 +39,7 @@ app.use(session({
 
 app.use((req, res, next) => {
   res.locals.passenger = req.session.passenger || null;
-  res.locals.basePath = '/';
+  res.locals.basePath = BASE_PATH.endsWith('/') ? BASE_PATH : BASE_PATH + '/';
   next();
 });
 
@@ -49,7 +53,7 @@ app.use('/api', apiRouter);
 
 app.get('/', async (req, res) => {
   const lines = await lineModel.getAll(db);
-  res.render('index', { basePath: '/', lines });
+  res.render('index', { basePath: BASE_PATH, lines });
 });
 
 app.get('/login', (req, res) => {
@@ -845,7 +849,7 @@ app.get('/reservations', async (req, res) => {
     }
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}, base path: ${BASE_PATH}`);
     });
   } catch (err) {
     console.error('Failed to initialize database:', err);

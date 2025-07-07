@@ -118,6 +118,7 @@ module.exports = {
       };
       res.json({ success: true, passenger_id: passenger.passenger_id, name: passenger.passenger_name, surname: passenger.passenger_surname, email: passenger.email });
     } catch (err) {
+      console.error('Login error:', err);
       res.status(500).json({ error: 'Login failed' });
     }
   },

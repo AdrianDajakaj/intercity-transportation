@@ -60,6 +60,7 @@ module.exports = {
   getStopsForLineCodeAndDirection: async (req, res) => {
     try {
       const { line_code, direction } = req.params;
+      console.log('Getting stops for line_code:', line_code, 'direction:', direction);
       const sql = `SELECT ls.line_stop_id, ls.sequence, bs.stop_name
         FROM line l
         JOIN line_stop ls ON l.line_id = ls.line_id
@@ -67,8 +68,10 @@ module.exports = {
         WHERE l.line_code = ? AND l.direction = ?
         ORDER BY ls.sequence`;
       const [rows] = await db.execute(sql, [line_code, direction]);
+      console.log('Found stops:', rows.length, rows);
       res.json(rows);
     } catch (err) {
+      console.error('Error fetching stops:', err);
       res.status(500).json({ error: 'Failed to fetch stops for line_code and direction' });
     }
   },

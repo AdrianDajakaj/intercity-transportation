@@ -12,6 +12,12 @@ const discountController = require('../controllers/discountController');
 const fareController = require('../controllers/fareController');
 const bookingController = require('../controllers/bookingController');
 
+// Add logging middleware for API routes only
+router.use((req, res, next) => {
+  console.log(`API: ${req.method} ${req.path}`);
+  next();
+});
+
 router.post('/addresses', addressController.create);
 router.get('/addresses', addressController.getAll);
 router.get('/addresses/:id', addressController.getById);
