@@ -11,7 +11,7 @@ form.addEventListener('submit', async (e) => {
 
   try {
     const basePath = window.BASE_PATH || '/';
-    const res = await fetch(`${basePath}api/passengers`, {
+    const res = await fetch(`api/passengers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ passenger_name, passenger_surname, email, password })

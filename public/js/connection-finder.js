@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchStops(lineCode, direction) {
         const basePath = window.BASE_PATH || '/';
-        const res = await fetch(`${basePath}api/lines/${lineCode}/${direction}/stops`);
+        const res = await fetch(`api/lines/${lineCode}/${direction}/stops`);
         return await res.json();
     }
 

@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('Booking payload:', payload);
       try {
         const basePath = window.BASE_PATH || '/';
-        const res = await fetch(`${basePath}api/bookings`, {
+        const res = await fetch(`api/bookings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
