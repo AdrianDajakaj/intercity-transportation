@@ -15,6 +15,13 @@ document.addEventListener('DOMContentLoaded', function() {
     window.departures = [];
   }
 
+  const today = new Date().toISOString().split('T')[0];
+  const currentTime = new Date().toTimeString().slice(0, 5);
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const departureDate = urlParams.get('departure_date') || today;
+  const isToday = departureDate === today;
+
   const tiles = document.querySelectorAll('.departure-tile');
   const bookBtn = document.getElementById('book-btn');
   let selectedTile = null;
@@ -24,6 +31,15 @@ document.addEventListener('DOMContentLoaded', function() {
   let selectedTileIdx = null;
 
   tiles.forEach((tile, idx) => {
+    const departure = window.departures[idx];
+    
+    if (isToday && departure && departure.departure_time <= currentTime) {
+      tile.classList.add('disabled');
+      tile.style.opacity = '0.5';
+      tile.style.cursor = 'not-allowed';
+      return;
+    }
+    
     tile.addEventListener('click', function() {
       if (selectedTile) {
         selectedTile.classList.remove('selected');
@@ -72,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = await res.json();
         if (res.ok) {
           alert('Rezerwacja udana!');
-          window.location.reload();
+          window.location.href = 'reservations';
         } else {
           alert('Błąd rezerwacji: ' + (data.error || 'Nieznany błąd.'));
         }

@@ -1,9 +1,7 @@
-// Discount controller for CRUD operations
 const db = require('../config/db');
 const discountModel = require('../models/discountModel');
 
 module.exports = {
-  // Create a new discount
   create: async (req, res) => {
     try {
       const id = await discountModel.create(db, req.body);
@@ -13,7 +11,6 @@ module.exports = {
     }
   },
 
-  // Get all discounts
   getAll: async (req, res) => {
     try {
       const discounts = await discountModel.getAll(db);
@@ -23,7 +20,6 @@ module.exports = {
     }
   },
 
-  // Get discount by id
   getById: async (req, res) => {
     try {
       const discount = await discountModel.getById(db, req.params.id);
@@ -34,7 +30,6 @@ module.exports = {
     }
   },
 
-  // Update discount by id
   update: async (req, res) => {
     try {
       const updated = await discountModel.update(db, req.params.id, req.body);
@@ -45,7 +40,6 @@ module.exports = {
     }
   },
 
-  // Delete discount by id
   delete: async (req, res) => {
     try {
       const deleted = await discountModel.delete(db, req.params.id);

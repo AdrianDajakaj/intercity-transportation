@@ -1,10 +1,8 @@
-// BusStop controller for CRUD operations
 const db = require('../config/db');
 const busStopModel = require('../models/busStopModel');
 const addressModel = require('../models/addressModel');
 
 module.exports = {
-  // Create a new bus stop
   create: async (req, res) => {
     try {
       const id = await busStopModel.create(db, req.body);
@@ -14,7 +12,6 @@ module.exports = {
     }
   },
 
-  // Get all bus stops
   getAll: async (req, res) => {
     try {
       const stops = await busStopModel.getAll(db);
@@ -24,7 +21,6 @@ module.exports = {
     }
   },
 
-  // Get bus stop by id
   getById: async (req, res) => {
     try {
       const stop = await busStopModel.getById(db, req.params.id);
@@ -35,7 +31,6 @@ module.exports = {
     }
   },
 
-  // Update bus stop by id
   update: async (req, res) => {
     try {
       const updated = await busStopModel.update(db, req.params.id, req.body);
@@ -46,7 +41,6 @@ module.exports = {
     }
   },
 
-  // Delete bus stop by id
   delete: async (req, res) => {
     try {
       const deleted = await busStopModel.delete(db, req.params.id);
@@ -57,7 +51,6 @@ module.exports = {
     }
   },
 
-  // Get address for a specific bus stop
   getAddress: async (req, res) => {
     try {
       const stop = await busStopModel.getById(db, req.params.id);
@@ -70,7 +63,6 @@ module.exports = {
     }
   },
 
-  // Update address for a specific bus stop
   updateAddress: async (req, res) => {
     try {
       const stop = await busStopModel.getById(db, req.params.id);

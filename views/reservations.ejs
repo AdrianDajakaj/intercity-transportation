@@ -1,5 +1,10 @@
 <div class="container">
-  <h2 class="page-title">Moje rezerwacje</h2>
+  <div class="page-header">
+    <h2 class="page-title">Moje rezerwacje</h2>
+    <% if (currentReservations.length > 0 || archivedReservations.length > 0) { %>
+      <a href="/" class="btn btn-primary next-booking-btn">Kolejna rezerwacja</a>
+    <% } %>
+  </div>
   
   <% if (typeof error !== 'undefined' && error) { %>
     <div class="error-message" role="alert">
@@ -7,126 +12,379 @@
     </div>
   <% } %>
   
-  <% if (reservations.length === 0) { %>
+  <% if (currentReservations.length === 0 && archivedReservations.length === 0) { %>
     <div class="no-reservations">
       <img src="/img/empty-box.svg" alt="Brak rezerwacji" style="width:80px;opacity:0.5;margin-bottom:1rem;"/>
       <p>Nie masz jeszcze żadnych rezerwacji.</p>
-      <p><a href="timetable" class="btn btn-primary">Zarezerwuj pierwszy kurs</a></p>
+      <p><a href="/" class="btn btn-primary">Zarezerwuj pierwszy kurs</a></p>
     </div>
   <% } else { %>
-    <div class="reservations-list">
-      <% reservations.forEach(function(reservation) { %>
-        <div class="reservation-card" tabindex="0" aria-label="Szczegóły rezerwacji">
-          <div class="reservation-header">
-            <div class="line-info">
-              <span class="line-name" style="background-color:<%= reservation.color_hex ? reservation.color_hex : '#003366' %>;">
-                <%= reservation.line_name %>
-              </span>
-              <span class="trip-date"><i class="fa fa-calendar"></i>
-                <% if (reservation.trip_date) { 
-                  let d = ('' + reservation.trip_date).split('T')[0].split('-');
-                  if (d.length === 3) { %>
-                    <%= d[2] + '.' + d[1] + '.' + d[0] %>
-                  <% } else { %>
-                    <%= reservation.trip_date %>
-                  <% } 
-                } else { %>
-                  Brak daty
-                <% } %>
-              </span>
-            </div>
-            <div class="reservation-status status-<%= reservation.status %>">
-              <%= reservation.status === 'reserved' ? 'Zarezerwowane' : 
-                  reservation.status === 'cancelled' ? 'Anulowane' : 
-                  'Zakończone' %>
-            </div>
-          </div>
-          
-          <div class="route-info">
-            <div class="route-segment">
-              <div class="stop-info">
-                <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.start_stop_name %></div>
-                <div class="stop-city"><%= reservation.start_city %></div>
-                <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.start_departure_time || '-' %></div>
+    
+    <% if (currentReservations.length > 0) { %>
+      <div class="reservations-section">
+        <h3 class="section-title">Aktualne rezerwacje</h3>
+        <div class="reservations-list">
+          <% currentReservations.forEach(function(reservation) { %>
+            <div class="reservation-card" aria-label="Szczegóły rezerwacji">
+              <div class="reservation-header">
+                <div class="line-info">
+                  <span class="line-name" style="background-color:<%= reservation.color_hex ? reservation.color_hex : '#003366' %>;">
+                    <%= reservation.line_name %>
+                  </span>
+                  <span class="trip-date"><i class="fa fa-calendar"></i>
+                    <% if (reservation.trip_date) { 
+                      let d = ('' + reservation.trip_date).split('T')[0].split('-');
+                      if (d.length === 3) { %>
+                        <%= d[2] + '.' + d[1] + '.' + d[0] %>
+                      <% } else { %>
+                        <%= reservation.trip_date %>
+                      <% } 
+                    } else { %>
+                      Brak daty
+                    <% } %>
+                  </span>
+                </div>
+                <div class="reservation-status status-<%= reservation.status %>">
+                  <%= reservation.status === 'reserved' ? 'Zarezerwowane' : 
+                      reservation.status === 'cancelled' ? 'Anulowane' : 
+                      'Zakończone' %>
+                </div>
+              </div>
+              
+              <div class="route-info">
+                <div class="route-segment">
+                  <div class="stop-info">
+                    <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.start_stop_name %></div>
+                    <div class="stop-city"><%= reservation.start_city %></div>
+                    <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.start_departure_time || '-' %></div>
+                  </div>
+                </div>
+                <div class="route-arrow" aria-hidden="true">→</div>
+                <div class="route-segment">
+                  <div class="stop-info">
+                    <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.end_stop_name %></div>
+                    <div class="stop-city"><%= reservation.end_city %></div>
+                    <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.end_departure_time || '-' %></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="reservation-details">
+                <div class="detail-item">
+                  <span class="detail-label">Miejsce:</span>
+                  <span class="detail-value">
+                    <%= reservation.seat_number %> 
+                    (<%= reservation.deck === 'upper' ? 'górny pokład' : 'dolny pokład' %>)
+                  </span>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">Zniżka:</span>
+                  <span class="detail-value">
+                    <% if (reservation.discount_code) { %>
+                      <%= reservation.discount_description || reservation.discount_code %>
+                      <% if (reservation.percent_off > 0) { %>
+                        (-<%= reservation.percent_off %>%)
+                      <% } %>
+                    <% } else { %>
+                      Brak
+                    <% } %>
+                  </span>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">Cena:</span>
+                  <span class="detail-value price">
+                    <% if (reservation.final_price > 0) { %>
+                      <%= reservation.final_price.toFixed(2) %> zł
+                      <% if (reservation.percent_off > 0 && !isNaN(parseFloat(reservation.base_price))) { %>
+                        <span class="original-price">(<%= parseFloat(reservation.base_price).toFixed(2) %> zł)</span>
+                      <% } %>
+                    <% } else { %>
+                      <span style="color:#c62828;font-weight:bold">Nie ustalono</span>
+                      <% if (!reservation.base_price) { %>
+                        <span style="color:#888;font-size:0.9em">(Brak danych taryfy w bazie)</span>
+                      <% } %>
+                    <% } %>
+                  </span>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">Zarezerwowano:</span>
+                  <span class="detail-value">
+                    <%= new Date(reservation.created_at).toLocaleDateString('pl-PL') %> 
+                    <%= new Date(reservation.created_at).toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit'}) %>
+                  </span>
+                </div>
+              </div>
+              
+              <div class="reservation-id">
+                Rezerwacja #<%= reservation.booking_id %>
+                <a href="api/bookings/<%= reservation.booking_id %>/ticket" class="btn btn-secondary" style="margin-left:1rem;" download>Pobierz PDF</a>
               </div>
             </div>
-            <div class="route-arrow" aria-hidden="true">→</div>
-            <div class="route-segment">
-              <div class="stop-info">
-                <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.end_stop_name %></div>
-                <div class="stop-city"><%= reservation.end_city %></div>
-                <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.end_departure_time || '-' %></div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="reservation-details">
-            <div class="detail-item">
-              <span class="detail-label">Miejsce:</span>
-              <span class="detail-value">
-                <%= reservation.seat_number %> 
-                (<%= reservation.deck === 'upper' ? 'górny pokład' : 'dolny pokład' %>)
-              </span>
-            </div>
-            
-            <div class="detail-item">
-              <span class="detail-label">Zniżka:</span>
-              <span class="detail-value">
-                <% if (reservation.discount_code) { %>
-                  <%= reservation.discount_description || reservation.discount_code %>
-                  <% if (reservation.percent_off > 0) { %>
-                    (-<%= reservation.percent_off %>%)
-                  <% } %>
-                <% } else { %>
-                  Brak
-                <% } %>
-              </span>
-            </div>
-            
-            <div class="detail-item">
-              <span class="detail-label">Cena:</span>
-              <span class="detail-value price">
-                <% if (reservation.final_price > 0) { %>
-                  <%= reservation.final_price.toFixed(2) %> zł
-                  <% if (reservation.percent_off > 0 && !isNaN(parseFloat(reservation.base_price))) { %>
-                    <span class="original-price">(<%= parseFloat(reservation.base_price).toFixed(2) %> zł)</span>
-                  <% } %>
-                <% } else { %>
-                  <span style="color:#c62828;font-weight:bold">Nie ustalono</span>
-                  <% if (!reservation.base_price) { %>
-                    <span style="color:#888;font-size:0.9em">(Brak danych taryfy w bazie)</span>
-                  <% } %>
-                <% } %>
-              </span>
-            </div>
-            
-            <div class="detail-item">
-              <span class="detail-label">Zarezerwowano:</span>
-              <span class="detail-value">
-                <%= new Date(reservation.created_at).toLocaleDateString('pl-PL') %> 
-                <%= new Date(reservation.created_at).toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit'}) %>
-              </span>
-            </div>
-          </div>
-          
-          <div class="reservation-id">
-            Rezerwacja #<%= reservation.booking_id %>
-            <a href="api/bookings/<%= reservation.booking_id %>/ticket" class="btn btn-secondary" style="margin-left:1rem;" download>Pobierz PDF</a>
-          </div>
+          <% }); %>
         </div>
-      <% }); %>
-    </div>
+      </div>
+    <% } %>
+    
+    <% if (archivedReservations.length > 0) { %>
+      <div class="reservations-section archived-section">
+        <div class="archive-header">
+          <h3 class="section-title">Archiwalne rezerwacje</h3>
+          <button class="toggle-archive-btn" onclick="toggleArchive()">
+            <i class="fa fa-chevron-down"></i>
+            <span>Pokaż</span>
+          </button>
+        </div>
+        <div class="reservations-list archived-list" style="display: none;">
+          <% archivedReservations.forEach(function(reservation) { %>
+            <div class="reservation-card archived-card" aria-label="Szczegóły archiwalnej rezerwacji">
+              <div class="reservation-header">
+                <div class="line-info">
+                  <span class="line-name" style="background-color:<%= reservation.color_hex ? reservation.color_hex : '#003366' %>;">
+                    <%= reservation.line_name %>
+                  </span>
+                  <span class="trip-date"><i class="fa fa-calendar"></i>
+                    <% if (reservation.trip_date) { 
+                      let d = ('' + reservation.trip_date).split('T')[0].split('-');
+                      if (d.length === 3) { %>
+                        <%= d[2] + '.' + d[1] + '.' + d[0] %>
+                      <% } else { %>
+                        <%= reservation.trip_date %>
+                      <% } 
+                    } else { %>
+                      Brak daty
+                    <% } %>
+                  </span>
+                </div>
+                <div class="reservation-status status-<%= reservation.status %>">
+                  <%= reservation.status === 'reserved' ? 'Zarezerwowane' : 
+                      reservation.status === 'cancelled' ? 'Anulowane' : 
+                      'Zakończone' %>
+                </div>
+              </div>
+              
+              <div class="route-info">
+                <div class="route-segment">
+                  <div class="stop-info">
+                    <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.start_stop_name %></div>
+                    <div class="stop-city"><%= reservation.start_city %></div>
+                    <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.start_departure_time || '-' %></div>
+                  </div>
+                </div>
+                <div class="route-arrow" aria-hidden="true">→</div>
+                <div class="route-segment">
+                  <div class="stop-info">
+                    <div class="stop-name"><i class="fa fa-map-marker"></i> <%= reservation.end_stop_name %></div>
+                    <div class="stop-city"><%= reservation.end_city %></div>
+                    <div class="stop-time"><i class="fa fa-clock-o"></i> <%= reservation.end_departure_time || '-' %></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="reservation-details">
+                <div class="detail-item">
+                  <span class="detail-label">Miejsce:</span>
+                  <span class="detail-value">
+                    <%= reservation.seat_number %> 
+                    (<%= reservation.deck === 'upper' ? 'górny pokład' : 'dolny pokład' %>)
+                  </span>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">Zniżka:</span>
+                  <span class="detail-value">
+                    <% if (reservation.discount_code) { %>
+                      <%= reservation.discount_description || reservation.discount_code %>
+                      <% if (reservation.percent_off > 0) { %>
+                        (-<%= reservation.percent_off %>%)
+                      <% } %>
+                    <% } else { %>
+                      Brak
+                    <% } %>
+                  </span>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">Cena:</span>
+                  <span class="detail-value price">
+                    <% if (reservation.final_price > 0) { %>
+                      <%= reservation.final_price.toFixed(2) %> zł
+                      <% if (reservation.percent_off > 0 && !isNaN(parseFloat(reservation.base_price))) { %>
+                        <span class="original-price">(<%= parseFloat(reservation.base_price).toFixed(2) %> zł)</span>
+                      <% } %>
+                    <% } else { %>
+                      <span style="color:#c62828;font-weight:bold">Nie ustalono</span>
+                      <% if (!reservation.base_price) { %>
+                        <span style="color:#888;font-size:0.9em">(Brak danych taryfy w bazie)</span>
+                      <% } %>
+                    <% } %>
+                  </span>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">Zarezerwowano:</span>
+                  <span class="detail-value">
+                    <%= new Date(reservation.created_at).toLocaleDateString('pl-PL') %> 
+                    <%= new Date(reservation.created_at).toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit'}) %>
+                  </span>
+                </div>
+              </div>
+              
+              <div class="reservation-id">
+                Rezerwacja #<%= reservation.booking_id %>
+                <a href="api/bookings/<%= reservation.booking_id %>/ticket" class="btn btn-secondary" style="margin-left:1rem;" download>Pobierz PDF</a>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+    
   <% } %>
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
+<script>
+function toggleArchive() {
+  const archiveList = document.querySelector('.archived-list');
+  const toggleBtn = document.querySelector('.toggle-archive-btn');
+  const toggleText = toggleBtn.querySelector('span');
+  const toggleIcon = toggleBtn.querySelector('i');
+  
+  if (archiveList.style.display === 'none') {
+    archiveList.style.display = 'flex';
+    toggleText.textContent = 'Ukryj';
+    toggleIcon.className = 'fa fa-chevron-up';
+  } else {
+    archiveList.style.display = 'none';
+    toggleText.textContent = 'Pokaż';
+    toggleIcon.className = 'fa fa-chevron-down';
+  }
+}
+</script>
+
 <style>
-.page-title {
+.reservations-section {
   margin-bottom: 2rem;
+}
+
+.section-title {
+  margin-bottom: 1rem;
+  color: #003366;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.archive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.toggle-archive-btn {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #495057;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.toggle-archive-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.archived-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.archived-card {
+  opacity: 0.8;
+  border-color: #e9ecef;
+}
+
+.archived-card:hover {
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-title {
+  margin: 0;
   color: #003366;
   font-size: 2rem;
   font-weight: bold;
+}
+
+.next-booking-btn {
+  background: #0056b3;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.next-booking-btn:hover {
+  background: #004494;
+  color: white;
+  text-decoration: none;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary {
+  background: #0056b3;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #004494;
+  color: white;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  color: white;
+  text-decoration: none;
 }
 
 .error-message {
@@ -149,13 +407,13 @@
   font-size: 1.1rem;
 }
 
-.no-reservations a {
+.no-reservations a:not(.btn) {
   color: #0056b3;
   text-decoration: none;
   font-weight: bold;
 }
 
-.no-reservations a:hover {
+.no-reservations a:not(.btn):hover {
   text-decoration: underline;
 }
 
@@ -322,6 +580,17 @@
 }
 
 @media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .archive-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
   .reservation-header {
     flex-direction: column;
     gap: 1rem;

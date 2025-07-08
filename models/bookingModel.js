@@ -122,10 +122,14 @@ const Booking = {
         d.discount_code,
         d.discount_description,
         d.percent_off,
-        b.base_price
+        b.base_price,
+        p.passenger_name,
+        p.passenger_surname,
+        p.email
       FROM booking b
       JOIN trip t ON b.trip_id = t.trip_id
       JOIN line l ON t.line_id = l.line_id
+      JOIN passenger p ON b.passenger_id = p.passenger_id
       JOIN line_stop start_ls ON b.start_line_stop_id = start_ls.line_stop_id
       JOIN bus_stop start_stop ON start_ls.stop_id = start_stop.stop_id
       JOIN line_stop end_ls ON b.end_line_stop_id = end_ls.line_stop_id

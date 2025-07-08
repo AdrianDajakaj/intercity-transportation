@@ -79,7 +79,7 @@ app.get('/timetable', async (req, res) => {
   const { line_code_direction, departure_from, departure_to, departure_date, ticket_type } = req.query;
   if (!line_code_direction || !departure_from || !departure_to || !departure_date) {
     console.log('Missing required query params');
-    return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+    return res.render('timetable', { departures: [], passenger: req.session.passenger || null, departure_date: null });
   }
   
   try {
@@ -89,7 +89,7 @@ app.get('/timetable', async (req, res) => {
   console.log('Found line:', line);
   if (!line) {
     console.log('Line not found');
-    return res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+    return res.render('timetable', { departures: [], passenger: req.session.passenger || null, departure_date });
   }
   const trips = await tripModel.getAll(db);
   const tripsForDay = trips.filter(trip => {
@@ -117,6 +117,10 @@ app.get('/timetable', async (req, res) => {
     }
   }
   let departures = [];
+  const today = new Date().toISOString().split('T')[0];
+  const isToday = departure_date === today;
+  const currentTime = new Date().toTimeString().slice(0, 5);
+  
   for (const trip of tripsForDay) {
     const stops = await tripModel.getTripStops(db, trip.trip_id);
     console.log('Trip', trip.trip_id, 'stops:', stops);
@@ -127,9 +131,17 @@ app.get('/timetable', async (req, res) => {
       console.log('Skipping trip', trip.trip_id, 'because stops not found or arrIdx <= depIdx');
       continue;
     }
+    
+    const departureTime = stops[depIdx].departure_time;
+    
+    if (isToday && departureTime <= currentTime) {
+      console.log('Skipping trip', trip.trip_id, 'because departure time', departureTime, 'has already passed (current time:', currentTime, ')');
+      continue;
+    }
+    
     departures.push({
       trip_id: trip.trip_id,
-      departure_time: stops[depIdx].departure_time,
+      departure_time: departureTime,
       departure_stop: stops[depIdx].stop_name,
       arrival_time: stops[arrIdx].departure_time,
       arrival_stop: stops[arrIdx].stop_name,
@@ -143,11 +155,11 @@ app.get('/timetable', async (req, res) => {
     console.log('No departures found for these params');
   }
   console.log('DEPARTURES SENT TO EJS:', departures);
-  res.render('timetable', { departures, passenger: req.session.passenger || null });
+  res.render('timetable', { departures, passenger: req.session.passenger || null, departure_date });
   
   } catch (error) {
     console.error('Error in timetable route:', error);
-    res.render('timetable', { departures: [], passenger: req.session.passenger || null });
+    res.render('timetable', { departures: [], passenger: req.session.passenger || null, departure_date: null });
   }
 });
 
@@ -200,10 +212,16 @@ app.get('/reservations', async (req, res) => {
       LEFT JOIN timetable start_tt ON start_tt.line_stop_id = start_ls.line_stop_id AND start_tt.run_number = t.run_number
       LEFT JOIN timetable end_tt ON end_tt.line_stop_id = end_ls.line_stop_id AND end_tt.run_number = t.run_number
       WHERE b.passenger_id = ?
-      ORDER BY t.trip_date DESC
+      ORDER BY t.trip_date ASC, start_tt.departure_time ASC
     `;
 
     const [reservations] = await db.query(sql, [passengerId]);
+
+    const today = new Date().toISOString().split('T')[0];
+    const currentTime = new Date().toTimeString().slice(0, 5);
+    
+    const currentReservations = [];
+    const archivedReservations = [];
 
     reservations.forEach(reservation => {
       if (reservation.trip_date instanceof Date) {
@@ -217,16 +235,27 @@ app.get('/reservations', async (req, res) => {
         reservation.final_price = 0;
       }
       reservation.color_hex = '#003366';
+      
+      const reservationDate = reservation.trip_date;
+      const departureTime = reservation.start_departure_time || '00:00';
+      
+      if (reservationDate > today || (reservationDate === today && departureTime > currentTime)) {
+        currentReservations.push(reservation);
+      } else {
+        archivedReservations.push(reservation);
+      }
     });
 
     res.render('reservations', { 
-      reservations, 
+      currentReservations,
+      archivedReservations,
       passenger: req.session.passenger 
     });
   } catch (error) {
     console.error('Error fetching reservations:', error);
     res.render('reservations', { 
-      reservations: [], 
+      currentReservations: [], 
+      archivedReservations: [],
       passenger: req.session.passenger,
       error: 'Wystąpił błąd podczas pobierania rezerwacji. Szczegóły: ' + error.message
     });

@@ -1,9 +1,7 @@
-// Bus controller for CRUD operations
 const db = require('../config/db');
 const busModel = require('../models/busModel');
 
 module.exports = {
-  // Create a new bus
   create: async (req, res) => {
     try {
       const id = await busModel.create(db, req.body);
@@ -13,7 +11,6 @@ module.exports = {
     }
   },
 
-  // Get all buses
   getAll: async (req, res) => {
     try {
       const buses = await busModel.getAll(db);
@@ -23,7 +20,6 @@ module.exports = {
     }
   },
 
-  // Get bus by id
   getById: async (req, res) => {
     try {
       const bus = await busModel.getById(db, req.params.id);
@@ -34,7 +30,6 @@ module.exports = {
     }
   },
 
-  // Update bus by id
   update: async (req, res) => {
     try {
       const updated = await busModel.update(db, req.params.id, req.body);
@@ -45,7 +40,6 @@ module.exports = {
     }
   },
 
-  // Delete bus by id
   delete: async (req, res) => {
     try {
       const deleted = await busModel.delete(db, req.params.id);

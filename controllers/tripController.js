@@ -1,11 +1,9 @@
-// Trip controller for CRUD operations
 const db = require('../config/db');
 const tripModel = require('../models/tripModel');
 const lineModel = require('../models/lineModel');
 const busModel = require('../models/busModel');
 
 module.exports = {
-  // Create a new trip
   create: async (req, res) => {
     try {
       const id = await tripModel.create(db, req.body);
@@ -15,11 +13,9 @@ module.exports = {
     }
   },
 
-  // Get all trips
   getAll: async (req, res) => {
     try {
       const trips = await tripModel.getAll(db);
-      // Format trip_date as YYYY-MM-DD
       const formatted = trips.map(trip => ({
         ...trip,
         trip_date: trip.trip_date instanceof Date ? trip.trip_date.toISOString().slice(0, 10) : trip.trip_date
@@ -30,12 +26,10 @@ module.exports = {
     }
   },
 
-  // Get trip by id
   getById: async (req, res) => {
     try {
       const trip = await tripModel.getById(db, req.params.id);
       if (!trip) return res.status(404).json({ error: 'Not found' });
-      // Format trip_date as YYYY-MM-DD
       trip.trip_date = trip.trip_date instanceof Date ? trip.trip_date.toISOString().slice(0, 10) : trip.trip_date;
       res.json(trip);
     } catch (err) {
@@ -43,7 +37,6 @@ module.exports = {
     }
   },
 
-  // Update trip by id
   update: async (req, res) => {
     try {
       const updated = await tripModel.update(db, req.params.id, req.body);
@@ -54,7 +47,6 @@ module.exports = {
     }
   },
 
-  // Delete trip by id
   delete: async (req, res) => {
     try {
       const deleted = await tripModel.delete(db, req.params.id);
@@ -65,7 +57,6 @@ module.exports = {
     }
   },
 
-  // Get line for a specific trip
   getLine: async (req, res) => {
     try {
       const trip = await tripModel.getById(db, req.params.id);
@@ -78,7 +69,6 @@ module.exports = {
     }
   },
 
-  // Get bus for a specific trip
   getBus: async (req, res) => {
     try {
       const trip = await tripModel.getById(db, req.params.id);
@@ -91,7 +81,6 @@ module.exports = {
     }
   },
 
-  // Get all stops and departure times for a specific trip (by trip_id)
   getTripStops: async (req, res) => {
     try {
       const trip = await tripModel.getById(db, req.params.id);

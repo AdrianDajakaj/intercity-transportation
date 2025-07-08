@@ -3,24 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intercity Transportation System</title>
+    <title>Intercity Bus</title>
     <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 <body>
     <header>
-        <nav class="navbar">
-            <div class="navbar-left">
-                <a href="" onclick="goToHome(); return false;">Intercity Transportation System</a>
-            </div>
-            <div class="navbar-center">
-                <a href="line-schedules">Rozkład jazdy</a>
-            </div>
-            <div class="navbar-right">
+        <nav class="navbar modern-navbar navbar-flex navbar-justified">
+            <div class="navbar-links-row">
+                <a href="" class="navbar-link navbar-brand" onclick="goToHome(); return false;">Intercity Bus</a>
+                <a href="line-schedules" class="navbar-link">Rozkład jazdy</a>
                 <% if (passenger) { %>
-                  <a href="reservations">Moje rezerwacje</a>
-                  <a href="#" id="logout-link">Wyloguj</a>
+                  <a href="reservations" class="navbar-link">Moje rezerwacje</a>
+                  <a href="#" id="logout-link" class="navbar-link">Wyloguj</a>
                 <% } else { %>
-                  <a href="login">Zaloguj</a>
+                  <a href="login" class="navbar-link">Zaloguj</a>
                 <% } %>
             </div>
         </nav>

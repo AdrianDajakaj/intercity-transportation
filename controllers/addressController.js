@@ -1,9 +1,7 @@
-// Address controller for CRUD operations
 const db = require('../config/db');
 const addressModel = require('../models/addressModel');
 
 module.exports = {
-  // Create a new address
   create: async (req, res) => {
     try {
       const id = await addressModel.create(db, req.body);
@@ -13,7 +11,6 @@ module.exports = {
     }
   },
 
-  // Get all addresses
   getAll: async (req, res) => {
     try {
       const addresses = await addressModel.getAll(db);
@@ -23,7 +20,6 @@ module.exports = {
     }
   },
 
-  // Get address by id
   getById: async (req, res) => {
     try {
       const address = await addressModel.getById(db, req.params.id);
@@ -34,7 +30,6 @@ module.exports = {
     }
   },
 
-  // Update address by id
   update: async (req, res) => {
     try {
       const updated = await addressModel.update(db, req.params.id, req.body);
@@ -45,7 +40,6 @@ module.exports = {
     }
   },
 
-  // Delete address by id
   delete: async (req, res) => {
     try {
       const deleted = await addressModel.delete(db, req.params.id);

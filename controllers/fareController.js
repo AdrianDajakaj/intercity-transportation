@@ -46,14 +46,12 @@ exports.delete = async (req, res) => {
   }
 };
 
-// Get total price for a line between start and end stops (line_id as path param)
 exports.getTotalPrice = async (req, res) => {
   let { start_line_stop_id, end_line_stop_id } = req.query;
   let { line_id } = req.params;
   if (!line_id || !start_line_stop_id || !end_line_stop_id) {
     return res.status(400).json({ error: 'Missing line_id, start_line_stop_id, or end_line_stop_id parameter' });
   }
-  // Ensure all IDs are integers for DB queries
   line_id = parseInt(line_id);
   start_line_stop_id = parseInt(start_line_stop_id);
   end_line_stop_id = parseInt(end_line_stop_id);
@@ -66,7 +64,6 @@ exports.getTotalPrice = async (req, res) => {
   }
 };
 
-// Get line for a specific fare
 exports.getLine = async (req, res) => {
   try {
     const fare_id = req.params.id;
@@ -78,7 +75,6 @@ exports.getLine = async (req, res) => {
   }
 };
 
-// Get start line stop for a specific fare
 exports.getStartLineStop = async (req, res) => {
   try {
     const fare_id = req.params.id;
@@ -90,7 +86,6 @@ exports.getStartLineStop = async (req, res) => {
   }
 };
 
-// Get end line stop for a specific fare
 exports.getEndLineStop = async (req, res) => {
   try {
     const fare_id = req.params.id;

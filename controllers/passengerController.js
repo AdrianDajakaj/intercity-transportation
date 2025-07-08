@@ -1,11 +1,9 @@
-// Passenger controller for CRUD operations
 const db = require('../config/db');
 const passengerModel = require('../models/passengerModel');
 const addressModel = require('../models/addressModel');
 const bcrypt = require('bcrypt');
 
 module.exports = {
-  // Create a new passenger
   create: async (req, res) => {
     try {
       let data = req.body;
@@ -24,7 +22,6 @@ module.exports = {
     }
   },
 
-  // Get all passengers
   getAll: async (req, res) => {
     try {
       const passengers = await passengerModel.getAll(db);
@@ -34,7 +31,6 @@ module.exports = {
     }
   },
 
-  // Get passenger by id
   getById: async (req, res) => {
     try {
       const passenger = await passengerModel.getById(db, req.params.id);
@@ -45,7 +41,6 @@ module.exports = {
     }
   },
 
-  // Update passenger by id
   update: async (req, res) => {
     try {
       const updated = await passengerModel.update(db, req.params.id, req.body);
@@ -56,7 +51,6 @@ module.exports = {
     }
   },
 
-  // Delete passenger by id
   delete: async (req, res) => {
     try {
       const deleted = await passengerModel.delete(db, req.params.id);
@@ -67,7 +61,6 @@ module.exports = {
     }
   },
 
-  // Get address for a specific passenger
   getAddress: async (req, res) => {
     try {
       const passenger = await passengerModel.getById(db, req.params.id);
@@ -80,7 +73,6 @@ module.exports = {
     }
   },
 
-  // Update address for a specific passenger
   updateAddress: async (req, res) => {
     try {
       const passenger = await passengerModel.getById(db, req.params.id);
@@ -94,7 +86,6 @@ module.exports = {
     }
   },
 
-  // Login endpoint with session
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -109,7 +100,6 @@ module.exports = {
       if (!match) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
-      // Set session
       req.session.passenger = {
         passenger_id: passenger.passenger_id,
         name: passenger.passenger_name,
@@ -123,7 +113,6 @@ module.exports = {
     }
   },
 
-  // Logout endpoint
   logout: (req, res) => {
     req.session.destroy(() => {
       res.json({ success: true });

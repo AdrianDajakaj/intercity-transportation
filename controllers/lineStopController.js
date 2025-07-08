@@ -1,11 +1,9 @@
-// LineStop controller for CRUD operations
 const db = require('../config/db');
 const lineStopModel = require('../models/lineStopModel');
 const lineModel = require('../models/lineModel');
 const busStopModel = require('../models/busStopModel');
 
 module.exports = {
-  // Create a new line_stop
   create: async (req, res) => {
     try {
       const id = await lineStopModel.create(db, req.body);
@@ -15,7 +13,6 @@ module.exports = {
     }
   },
 
-  // Get all line_stops
   getAll: async (req, res) => {
     try {
       const stops = await lineStopModel.getAll(db);
@@ -25,7 +22,6 @@ module.exports = {
     }
   },
 
-  // Get line_stop by id
   getById: async (req, res) => {
     try {
       const stop = await lineStopModel.getById(db, req.params.id);
@@ -36,7 +32,6 @@ module.exports = {
     }
   },
 
-  // Update line_stop by id
   update: async (req, res) => {
     try {
       const updated = await lineStopModel.update(db, req.params.id, req.body);
@@ -47,7 +42,6 @@ module.exports = {
     }
   },
 
-  // Delete line_stop by id
   delete: async (req, res) => {
     try {
       const deleted = await lineStopModel.delete(db, req.params.id);
@@ -58,7 +52,6 @@ module.exports = {
     }
   },
 
-  // Get line for a specific line stop
   getLine: async (req, res) => {
     try {
       const lineStop = await lineStopModel.getById(db, req.params.id);
@@ -71,7 +64,6 @@ module.exports = {
     }
   },
 
-  // Get bus stop for a specific line stop
   getBusStop: async (req, res) => {
     try {
       const lineStop = await lineStopModel.getById(db, req.params.id);
@@ -84,7 +76,6 @@ module.exports = {
     }
   },
 
-  // Get line and bus stop for a specific line stop
   getLineAndBusStop: async (req, res) => {
     try {
       const lineStop = await lineStopModel.getById(db, req.params.id);

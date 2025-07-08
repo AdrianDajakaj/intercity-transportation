@@ -1,4 +1,3 @@
-// Timetable controller for CRUD operations
 const db = require('../config/db');
 const timetableModel = require('../models/timetableModel');
 const lineStopModel = require('../models/lineStopModel');
@@ -6,7 +5,6 @@ const lineModel = require('../models/lineModel');
 const busStopModel = require('../models/busStopModel');
 
 module.exports = {
-  // Create a new timetable entry
   create: async (req, res) => {
     try {
       const id = await timetableModel.create(db, req.body);
@@ -16,7 +14,6 @@ module.exports = {
     }
   },
 
-  // Get all timetable entries
   getAll: async (req, res) => {
     try {
       const entries = await timetableModel.getAll(db);
@@ -26,7 +23,6 @@ module.exports = {
     }
   },
 
-  // Get timetable entry by id
   getById: async (req, res) => {
     try {
       const entry = await timetableModel.getById(db, req.params.id);
@@ -37,7 +33,6 @@ module.exports = {
     }
   },
 
-  // Update timetable entry by id
   update: async (req, res) => {
     try {
       const updated = await timetableModel.update(db, req.params.id, req.body);
@@ -48,7 +43,6 @@ module.exports = {
     }
   },
 
-  // Delete timetable entry by id
   delete: async (req, res) => {
     try {
       const deleted = await timetableModel.delete(db, req.params.id);
@@ -59,7 +53,6 @@ module.exports = {
     }
   },
 
-  // Get line and bus stop for a specific timetable entry
   getLineAndBusStop: async (req, res) => {
     try {
       const timetable = await timetableModel.getById(db, req.params.id);

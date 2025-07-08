@@ -1,9 +1,7 @@
-// Line controller for CRUD operations
 const db = require('../config/db');
 const lineModel = require('../models/lineModel');
 
 module.exports = {
-  // Create a new line
   create: async (req, res) => {
     try {
       const id = await lineModel.create(db, req.body);
@@ -13,7 +11,6 @@ module.exports = {
     }
   },
 
-  // Get all lines
   getAll: async (req, res) => {
     try {
       const lines = await lineModel.getAll(db);
@@ -23,7 +20,6 @@ module.exports = {
     }
   },
 
-  // Get line by id
   getById: async (req, res) => {
     try {
       const line = await lineModel.getById(db, req.params.id);
@@ -34,7 +30,6 @@ module.exports = {
     }
   },
 
-  // Update line by id
   update: async (req, res) => {
     try {
       const updated = await lineModel.update(db, req.params.id, req.body);
@@ -45,7 +40,6 @@ module.exports = {
     }
   },
 
-  // Delete line by id
   delete: async (req, res) => {
     try {
       const deleted = await lineModel.delete(db, req.params.id);
@@ -56,7 +50,6 @@ module.exports = {
     }
   },
 
-  // Get all stops for a specific line_code and direction
   getStopsForLineCodeAndDirection: async (req, res) => {
     try {
       const { line_code, direction } = req.params;
@@ -76,7 +69,6 @@ module.exports = {
     }
   },
 
-  // Get timetable for a specific line_code and direction
   getTimetableForLineCodeAndDirection: async (req, res) => {
     try {
       const { line_code, direction } = req.params;
@@ -94,7 +86,6 @@ module.exports = {
       WHERE l.line_code = ? AND l.direction = ?
       ORDER BY ls.sequence, tt.run_number, tt.departure_time`;
       const [rows] = await db.execute(sql, [line_code, direction]);
-      // Group by stop (sequence, stop_name)
       const grouped = {};
       for (const row of rows) {
         const key = `${row.sequence}|${row.stop_name}`;

@@ -4,36 +4,48 @@
       <h1 class="greeting">Witaj, <%= passenger.name %> <%= passenger.surname %>!</h1>
     <% } %>
     <form id="connection-finder" method="GET" action="timetable">
+        <h2 class="reservation-title">Rezerwacja</h2>
         <div class="ticket-type">
-            <label><input type="radio" name="ticket_type" value="normalny" checked> Bilet normalny</label>
-            <label><input type="radio" name="ticket_type" value="ulgowy"> Bilet ulgowy</label>
+            <label>
+                <input type="radio" name="ticket_type" value="normalny" checked>
+                Bilet normalny
+            </label>
+            <label>
+                <input type="radio" name="ticket_type" value="ulgowy">
+                Bilet ulgowy
+            </label>
         </div>
-        <div class="form-group">
-            <label for="line_code">Linia:</label>
-            <select id="line_code" name="line_code_direction">
-                <% lines.forEach(function(line) { %>
-                    <option value="<%= line.line_code %>_<%= line.direction %>"><%= line.line_name %></option>
-                <% }); %>
-            </select>
+        <div class="form-row">
+            <div class="form-group date-group">
+                <label for="departure_date">Data odjazdu:</label>
+                <input type="date" id="departure_date" name="departure_date" required min="<%= new Date().toISOString().split('T')[0] %>" value="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+            <div class="form-group line-group">
+                <label for="line_code">Linia:</label>
+                <select id="line_code" name="line_code_direction">
+                    <% lines.forEach(function(line) { %>
+                        <option value="<%= line.line_code %>_<%= line.direction %>"><%= line.line_name %></option>
+                    <% }); %>
+                </select>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="departure_from">Wyjazd z:</label>
-            <select id="departure_from" name="departure_from">
-            </select>
+        <div class="form-row">
+            <div class="form-group from-group">
+                <label for="departure_from">Wyjazd z:</label>
+                <select id="departure_from" name="departure_from">
+                </select>
+            </div>
+            <div class="form-group to-group">
+                <label for="departure_to">Przyjazd do:</label>
+                <select id="departure_to" name="departure_to">
+                </select>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="departure_to">Przyjazd do:</label>
-            <select id="departure_to" name="departure_to">
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="departure_date">Data odjazdu:</label>
-            <input type="date" id="departure_date" name="departure_date" required min="<%= new Date().toISOString().split('T')[0] %>">
-        </div>
-        <button type="submit">Szukaj</button>
+        <button type="submit" class="btn btn-primary login-btn">Szukaj</button>
+
+        
     </form>
     <script>
-        // Inline connection-finder script as fallback
         document.addEventListener('DOMContentLoaded', function() {
             const lineCodeSelect = document.getElementById('line_code');
             const fromSelect = document.getElementById('departure_from');
@@ -78,6 +90,12 @@
                 fromSelect.innerHTML = '';
                 if (!stops || stops.length === 0) {
                     console.log('No stops to populate');
+                    // Odśwież custom-select nawet jeśli pusto
+                    fromSelect.dispatchEvent(new Event('change'));
+                    if (window.renderCustomSelectOptions) {
+                        const wrapper = fromSelect.closest('.custom-select');
+                        if (wrapper) window.renderCustomSelectOptions(wrapper);
+                    }
                     return;
                 }
                 stops.forEach(stop => {
@@ -89,6 +107,10 @@
                 });
                 console.log('Populated', stops.length, 'stops');
                 fromSelect.dispatchEvent(new Event('change'));
+                if (window.renderCustomSelectOptions) {
+                    const wrapper = fromSelect.closest('.custom-select');
+                    if (wrapper) window.renderCustomSelectOptions(wrapper);
+                }
             }
 
             function populateToStops(stops, fromSeq) {
@@ -99,6 +121,11 @@
                     opt.textContent = stop.stop_name;
                     toSelect.appendChild(opt);
                 });
+                toSelect.dispatchEvent(new Event('change'));
+                if (window.renderCustomSelectOptions) {
+                    const wrapper = toSelect.closest('.custom-select');
+                    if (wrapper) window.renderCustomSelectOptions(wrapper);
+                }
             }
 
             async function updateStops() {
@@ -135,5 +162,19 @@
 
             updateStops();
         });
+    </script>
+    <script src="js/custom-select.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.renderCustomSelectOptions === undefined) {
+            const csScript = document.querySelector('script[src*="custom-select.js"]');
+            if (csScript) {
+                if (typeof renderCustomSelectOptions === 'function') {
+                    window.renderCustomSelectOptions = renderCustomSelectOptions;
+                } else {
+                }
+            }
+        }
+    });
     </script>
 </div>
