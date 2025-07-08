@@ -13,7 +13,7 @@
     <header>
         <nav class="navbar">
             <div class="navbar-left">
-                <a href="">Intercity Transportation System</a>
+                <a href="#" onclick="goToHome(); return false;">Intercity Transportation System</a>
             </div>
             <div class="navbar-center">
                 <a href="line-schedules">Rozkład jazdy</a>
@@ -33,6 +33,14 @@
     </main>
     <footer>
     </footer>
+    
+    <script>
+        function goToHome() {
+            const basePath = window.location.pathname.split('/').slice(0, 2).join('/') + '/';
+            window.location.href = basePath;
+        }
+    </script>
+    
     <% if (passenger) { %>
         <script src="js/logout.js"></script>
     <% } %>

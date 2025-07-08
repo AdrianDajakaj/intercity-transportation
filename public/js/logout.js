@@ -7,13 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       console.log('Logout clicked');
       try {
-        const basePath = window.BASE_PATH || '/';
-        console.log('Base path:', basePath);
-        const response = await fetch(`${basePath}api/passengers/logout`, { method: 'POST' });
-        console.log('Logout response:', response);
+        const response = await fetch(`api/passengers/logout`, { method: 'POST' });
         if (response.ok) {
-          console.log('Logout successful, reloading...');
-          window.location.reload();
+		const basePath = window.location.pathname.split('/').slice(0, 2).join('/') + '/';
+          window.location.href = basePath;
         } else {
           console.error('Logout failed:', response.status);
         }

@@ -8,15 +8,7 @@ form.addEventListener('submit', async (e) => {
   const password = form.password.value;
 
   try {
-    const basePath = window.BASE_PATH || '/';
-<<<<<<< HEAD
     const res = await fetch(`api/passengers/login`, {
-=======
-    const apiUrl = `${basePath}api/passengers/login`;
-    console.log('Attempting login to:', apiUrl);
-    
-    const res = await fetch(apiUrl, {
->>>>>>> 99e313cc1f53ab057b3e01366cfbb7c40ff47034
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -32,7 +24,8 @@ form.addEventListener('submit', async (e) => {
     console.log('Response data:', data);
     
     if (res.ok && data.success) {
-      window.location.href = '/';
+	const basePath = window.location.pathname.split('/').slice(0, 2).join('/') + '/';
+          window.location.href = basePath;
     } else {
       errorDiv.textContent = data.error || 'Login failed';
       errorDiv.classList.remove('d-none');
