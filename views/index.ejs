@@ -50,7 +50,6 @@
             }
 
             async function fetchStops(lineCode, direction) {
-                // Auto-detect base path from current URL
                 const currentPath = window.location.pathname;
                 let basePath = '/';
                 if (currentPath.includes('/p13/')) {
