@@ -15,29 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function fetchStops(lineCode, direction) {
-        const basePath = window.BASE_PATH || '/';
-<<<<<<< HEAD
         const res = await fetch(`api/lines/${lineCode}/${direction}/stops`);
         return await res.json();
-=======
-        const url = `${basePath}api/lines/${lineCode}/${direction}/stops`;
-        console.log('Fetching stops from:', url);
-        try {
-            const res = await fetch(url);
-            console.log('Response status:', res.status);
-            if (!res.ok) {
-                console.error('Response not OK:', res.status, res.statusText);
-                return [];
-            }
-            const data = await res.json();
-            console.log('Fetched stops:', data);
-            return data;
-        } catch (error) {
-            console.error('Error fetching stops:', error);
-            return [];
-        }
->>>>>>> 99e313cc1f53ab057b3e01366cfbb7c40ff47034
-    }
 
     function populateFromStops(stops) {
         console.log('populateFromStops called with:', stops);
